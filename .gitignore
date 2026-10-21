@@ -1,0 +1,18 @@
+# 内部标记与工作区数据
+.wbapp_*.genie
+.workbuddy/
+
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+
+# 依赖与构建中间产物
+node_modules/
+dist/
+*.log
