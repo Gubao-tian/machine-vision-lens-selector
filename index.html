@@ -854,6 +854,58 @@ details.detail[open] > summary::after { content: "－"; }
 }
 .disclaimer b { color: var(--ink-2); }
 
+/* ---------- 多相机拼接方案 ---------- */
+.stitch-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 13px 15px;
+  margin-bottom: 16px;
+}
+.stitch-card.active { border-color: #b3dbe3; background: linear-gradient(180deg, var(--accent-bg), var(--panel) 60%); }
+.stitch-head {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 8px;
+}
+.stitch-badge {
+  font: 500 11px var(--mono);
+  color: var(--accent);
+  background: #fff;
+  border: 1px solid #b3dbe3;
+  border-radius: 5px;
+  padding: 2px 7px;
+}
+.stitch-body { font-size: 12.5px; line-height: 1.6; color: var(--ink-2); }
+.stitch-body b { color: var(--ink); font-weight: 650; }
+.stitch-grid {
+  display: grid;
+  gap: 4px;
+  max-width: 200px;
+  margin: 11px 0 9px;
+}
+.stitch-grid i {
+  display: block;
+  aspect-ratio: 4 / 3;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+}
+.stitch-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font: 11px var(--mono);
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+@media print { .stitch-grid i { background: #eef4f6 !important; } }
+
 
 </style>
 </head>
@@ -894,6 +946,11 @@ details.detail[open] > summary::after { content: "－"; }
           <label>精度要求 <span class="unit">mm / 最小可检特征</span></label>
           <input type="number" id="in-tol" value="0.12" min="0.0005" step="0.005" inputmode="decimal">
           <p class="hint">按 3 像素准则换算：像素分辨率 = 精度 ÷ 3。填 0.12 即 120 µm。</p>
+        </div>
+
+        <div class="field">
+          <label class="chk"><input type="checkbox" id="in-stitch">允许多相机拼接（大视野 + 严精度时自动算台数）</label>
+          <p class="hint">开启后，若单机无法覆盖，工具会按库内最大相机算出最小拼接排布，并给出每台相机的视野与型号。</p>
         </div>
 
         <div class="field">
@@ -1066,6 +1123,8 @@ details.detail[open] > summary::after { content: "－"; }
   <div class="col-results">
 
     <div class="metrics" id="out-metrics"></div>
+
+    <div id="out-stitch"></div>
 
     <div class="result-tabs" id="result-tabs">
       <button type="button" class="on" data-tab="cam">推荐相机<span class="tab-n" id="tab-n-cam">—</span></button>
@@ -1552,6 +1611,79 @@ const ENGINE = {
     };
   },
 
+  /* 多相机拼接：大视野 + 严精度下单机无解时，给出最小可行拼接方案
+     思路：像素需求 ∝ 视野 / (精度/3)。库内最大相机单台能覆盖的视野 =
+     相机像素 × (精度/3)。总视野超出时，按 nx×ny 个相机平铺，每台视野 = 总视野/nx,ny。 */
+  suggestStitch({ fovW, fovH, tolerance, wd }) {
+    const need = this.requiredPixels(fovW, fovH, tolerance);
+    const maxCam = CAMERAS.reduce((a, c) => c.w * c.h > a.w * a.h ? c : a, CAMERAS[0]);
+    const pixelRes = tolerance / 3;
+
+    /* 单机是否可行：库内像素最大相机能否满足 */
+    const singleFeasible = maxCam.w >= need.pxW && maxCam.h >= need.pxH;
+
+    /* 单台最大相机在给定精度下可覆盖的视野 */
+    const singleCoverW = maxCam.w * pixelRes;
+    const singleCoverH = maxCam.h * pixelRes;
+    const nx = Math.max(1, Math.ceil(fovW / singleCoverW));
+    const ny = Math.max(1, Math.ceil(fovH / singleCoverH));
+    const count = nx * ny;
+    const eachW = fovW / nx;
+    const eachH = fovH / ny;
+
+    /* 每台视野的相机推荐（复用引擎评分） */
+    const camRec = this.recommendCameras(eachW, eachH, tolerance, {
+      moving: false, budget: 'any'
+    });
+
+    /* 候选方案：从单机到最优，列出中间档供比较 */
+    const plans = [];
+    const seen = {};
+    const addPlan = (gx, gy) => {
+      const key = gx + 'x' + gy;
+      if (seen[key]) return;
+      seen[key] = 1;
+      const w = fovW / gx, h = fovH / gy;
+      const needEach = this.requiredPixels(w, h, tolerance);
+      const rec = this.recommendCameras(w, h, tolerance, { moving: false, budget: 'any' });
+      plans.push({
+        nx: gx, ny: gy, count: gx * gy,
+        eachW: w, eachH: h, need: needEach, camRec: rec,
+        feasible: rec.list.some(c => !c.fails.length)
+      });
+    };
+    addPlan(1, 1);
+    if (!singleFeasible) {
+      /* 给出 2×2 到最优档的递进方案 */
+      const steps = new Set();
+      for (let k = 2; k <= Math.max(nx, ny); k++) steps.add(k);
+      steps.add(nx); steps.add(ny);
+      [...steps].sort((a, b) => a - b).forEach(k => {
+        const gx = Math.min(k, nx), gy = Math.min(k, ny);
+        if (gx >= 1 && gy >= 1) addPlan(Math.max(gx, 1), Math.max(gy, 1));
+      });
+      addPlan(nx, ny);
+    }
+    plans.sort((a, b) => a.count - b.count);
+
+    const best = plans.find(p => p.count === count && p.feasible) || plans[plans.length - 1];
+
+    return {
+      totalFov: { w: fovW, h: fovH },
+      tolerance,
+      wd,
+      pixelRes,
+      single: { feasible: singleFeasible, need, maxCam, coverW: singleCoverW, coverH: singleCoverH },
+      plans,
+      best: {
+        nx: best.nx, ny: best.ny, count: best.count,
+        eachW: best.eachW, eachH: best.eachH,
+        need: best.need, camRec: best.camRec, feasible: best.feasible,
+        practical: best.count <= 9
+      }
+    };
+  },
+
   /* 相机推荐 */
   recommendCameras(fovW, fovH, tolerance, opts) {
     const { moving, budget } = opts;
@@ -1962,6 +2094,7 @@ const S = {
   budget: 'any',
   teleMode: 'auto',
   fnum: 4,
+  stitch: false,
   /* 光源选型输入 */
   lightScene: 'metal-scratch',
   lightTarget: 'defect',
@@ -2011,6 +2144,7 @@ function syncFromDOM() {
   S.measure = $('in-measure').checked;
   S.moving = $('in-moving').checked;
   S.fnum = num('in-fnum', S.fnum);
+  S.stitch = $('in-stitch') ? $('in-stitch').checked : false;
   S.lightScene = $('in-light-scene').value;
   S.lightTarget = $('in-light-target').value;
   S.lightColorNeed = $('in-light-color').checked;
@@ -2028,10 +2162,21 @@ function syncFromDOM() {
 function compute() {
   syncFromDOM();
 
-  const fovW = Math.max(S.fovW, 0.1);
-  const fovH = Math.max(S.fovH, 0.1);
+  const totalFovW = Math.max(S.fovW, 0.1);
+  const totalFovH = Math.max(S.fovH, 0.1);
   const tol = Math.max(S.tol, 0.0005);
   const wd = Math.max(S.wd, 5);
+
+  /* 0a. 多相机拼接：开关打开时按客户总视野算台数；单机不可行则改用每台视野做后续推导 */
+  let stitchInfo = null;
+  let fovW = totalFovW, fovH = totalFovH;
+  if (S.stitch) {
+    stitchInfo = ENGINE.suggestStitch({ fovW: totalFovW, fovH: totalFovH, tolerance: tol, wd });
+    if (!stitchInfo.single.feasible && stitchInfo.best.feasible) {
+      fovW = stitchInfo.best.eachW;
+      fovH = stitchInfo.best.eachH;
+    }
+  }
 
   /* 0. 光源推荐（独立于相机，提前计算） */
   const lightRec = LIGHT_ENGINE.recommend({
@@ -2064,7 +2209,7 @@ function compute() {
   }
 
   if (!cam) {
-    return { error: 'no-camera', need: camRec.need, camRec, fovW, fovH, tol, wd, lightRec };
+    return { error: 'no-camera', need: camRec.need, camRec, fovW, fovH, tol, wd, lightRec, stitchInfo, totalFovW, totalFovH };
   }
 
   /* 3. 目标倍率与焦距 */
@@ -2159,14 +2304,60 @@ function compute() {
     dofBest: passed[0] ? passed[0].dof : 0,
     needTele, teleMode, perspErr,
     need: camRec.need,
-    lightRec, wdSuggest
+    lightRec, wdSuggest, stitchInfo, totalFovW, totalFovH
   };
+}
+
+/* 拼接方案卡片：开关打开时展示台数矩阵与每台视野 */
+function renderStitch(R) {
+  const host = $('out-stitch');
+  if (!host) return;
+  const S2 = R.stitchInfo;
+  if (!S2) { host.innerHTML = ''; return; }
+
+  const b = S2.best;
+  const single = S2.single;
+  const grid = [];
+  for (let y = 0; y < b.ny; y++) {
+    for (let x = 0; x < b.nx; x++) grid.push('<i></i>');
+  }
+  const topCam = b.camRec && b.camRec.list.find(c => !c.fails.length);
+  const camLabel = topCam ? `${topCam.cam.brand} ${topCam.cam.model}（${topCam.cam.w}×${topCam.cam.h}）` : '每台视野无可用相机';
+
+  let head, note;
+  if (single.feasible) {
+    head = `<b>单机即可覆盖</b>：${S2.totalFov.w}×${S2.totalFov.h}mm @ ${S2.tolerance}mm，库内最大相机 ${single.maxCam.brand} ${single.maxCam.model} 可满足，无需拼接。`;
+    note = '';
+  } else {
+    const practicalCls = b.practical ? 'ok' : 'warn';
+    head = `<b>单机无法覆盖</b>，需 <b>${b.nx}×${b.ny} = ${b.count} 台</b>拼接。每台视野 <b>${fmt(b.eachW, 0)}×${fmt(b.eachH, 0)}mm</b>，推荐 ${camLabel}。`;
+    note = b.practical
+      ? `<div class="notice ok"><span class="ico">✓</span><div>该台数在常规产线可接受范围（≤9 台），相机页签按<b>每台视野</b>给出型号。每台若用大靶面相机，可能需配大像圈长焦镜头——若镜头页无匹配，可调大 WD 或改用远心/大像圈镜头。</div></div>`
+      : `<div class="notice warn"><span class="ico">!</span><div>${b.count} 台拼接装配复杂、标定成本高，工程上通常不可行。建议：放宽精度、缩小单次视野改为运动扫描，或改用线阵相机（超出本工具面阵模型）。</div></div>`;
+  }
+
+  host.innerHTML = `
+    <div class="stitch-card ${single.feasible ? '' : 'active'}">
+      <div class="stitch-head">多相机拼接评估 <span class="stitch-badge">${S2.totalFov.w}×${S2.totalFov.h}mm</span></div>
+      <div class="stitch-body">${head}</div>
+      ${single.feasible ? '' : `
+      <div class="stitch-grid" style="grid-template-columns: repeat(${b.nx}, 1fr)">
+        ${grid.join('')}
+      </div>
+      <div class="stitch-meta">
+        <span>单机所需 ${single.need.pxW}×${single.need.pxH}px</span>
+        <span>库内最大 ${single.maxCam.w}×${single.maxCam.h}px</span>
+        <span>每台 ${fmt(b.eachW, 0)}×${fmt(b.eachH, 0)}mm</span>
+      </div>
+      ${note}`}
+    </div>`;
 }
 
 /* ---------------- 渲染 ---------------- */
 function render() {
   const R = compute();
   LAST = R;
+  renderStitch(R);
   const outLenses = $('out-lenses');
   const outCams = $('out-cams');
   const outMetrics = $('out-metrics');

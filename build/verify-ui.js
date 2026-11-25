@@ -30,6 +30,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var apply = document.querySelector('.btn-apply-wd');
     parts.push('rescueBtn=' + (apply ? apply.dataset.wd : 'none'));
     parts.push('lensTabText=' + (document.getElementById('out-lenses').textContent || '').slice(0, 40).replace(/\\s+/g, ' '));
+    var sc = document.getElementById('out-stitch');
+    parts.push('stitchText=' + (sc ? sc.textContent.replace(/\\s+/g, ' ').slice(0, 90) : 'none'));
+    parts.push('stitchGrid=' + (sc ? sc.querySelectorAll('.stitch-grid i').length : -1));
   } catch (e) {
     parts.push('ERROR=' + e.message);
   }
@@ -91,4 +94,25 @@ make('case-rescue.html', `
   document.getElementById('in-hd').value = 1;
   S.camMode = 'manual';
   S.manual = { w: 2448, h: 2048, px: 3.45, fmt: '2/3"', mount: 'C' };
+`);
+
+/* 工况五：多相机拼接开关打开，FOV800x600 / 精度0.3 → 需 2×2=4 台 */
+make('case-stitch.html', `
+  document.getElementById('in-fovw').value = 800;
+  document.getElementById('in-fovh').value = 600;
+  document.getElementById('in-tol').value = 0.3;
+  document.getElementById('in-wd').value = 800;
+  document.getElementById('in-hd').value = 1;
+  document.getElementById('in-stitch').checked = true;
+  S.camMode = 'auto';
+`);
+
+/* 工况六：拼接但精度0.1 → 25台，应标记不可行且给出替代建议 */
+make('case-stitch-impractical.html', `
+  document.getElementById('in-fovw').value = 800;
+  document.getElementById('in-fovh').value = 600;
+  document.getElementById('in-tol').value = 0.1;
+  document.getElementById('in-wd').value = 800;
+  document.getElementById('in-stitch').checked = true;
+  S.camMode = 'auto';
 `);

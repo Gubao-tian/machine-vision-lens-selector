@@ -846,3 +846,55 @@ details.detail[open] > summary::after { content: "－"; }
 }
 .disclaimer b { color: var(--ink-2); }
 
+/* ---------- 多相机拼接方案 ---------- */
+.stitch-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 13px 15px;
+  margin-bottom: 16px;
+}
+.stitch-card.active { border-color: #b3dbe3; background: linear-gradient(180deg, var(--accent-bg), var(--panel) 60%); }
+.stitch-head {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 8px;
+}
+.stitch-badge {
+  font: 500 11px var(--mono);
+  color: var(--accent);
+  background: #fff;
+  border: 1px solid #b3dbe3;
+  border-radius: 5px;
+  padding: 2px 7px;
+}
+.stitch-body { font-size: 12.5px; line-height: 1.6; color: var(--ink-2); }
+.stitch-body b { color: var(--ink); font-weight: 650; }
+.stitch-grid {
+  display: grid;
+  gap: 4px;
+  max-width: 200px;
+  margin: 11px 0 9px;
+}
+.stitch-grid i {
+  display: block;
+  aspect-ratio: 4 / 3;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+}
+.stitch-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font: 11px var(--mono);
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+@media print { .stitch-grid i { background: #eef4f6 !important; } }
+

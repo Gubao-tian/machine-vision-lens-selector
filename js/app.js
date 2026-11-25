@@ -15,6 +15,7 @@ const S = {
   budget: 'any',
   teleMode: 'auto',
   fnum: 4,
+  stitch: false,
   /* 光源选型输入 */
   lightScene: 'metal-scratch',
   lightTarget: 'defect',
@@ -64,6 +65,7 @@ function syncFromDOM() {
   S.measure = $('in-measure').checked;
   S.moving = $('in-moving').checked;
   S.fnum = num('in-fnum', S.fnum);
+  S.stitch = $('in-stitch') ? $('in-stitch').checked : false;
   S.lightScene = $('in-light-scene').value;
   S.lightTarget = $('in-light-target').value;
   S.lightColorNeed = $('in-light-color').checked;
@@ -81,10 +83,21 @@ function syncFromDOM() {
 function compute() {
   syncFromDOM();
 
-  const fovW = Math.max(S.fovW, 0.1);
-  const fovH = Math.max(S.fovH, 0.1);
+  const totalFovW = Math.max(S.fovW, 0.1);
+  const totalFovH = Math.max(S.fovH, 0.1);
   const tol = Math.max(S.tol, 0.0005);
   const wd = Math.max(S.wd, 5);
+
+  /* 0a. 多相机拼接：开关打开时按客户总视野算台数；单机不可行则改用每台视野做后续推导 */
+  let stitchInfo = null;
+  let fovW = totalFovW, fovH = totalFovH;
+  if (S.stitch) {
+    stitchInfo = ENGINE.suggestStitch({ fovW: totalFovW, fovH: totalFovH, tolerance: tol, wd });
+    if (!stitchInfo.single.feasible && stitchInfo.best.feasible) {
+      fovW = stitchInfo.best.eachW;
+      fovH = stitchInfo.best.eachH;
+    }
+  }
 
   /* 0. 光源推荐（独立于相机，提前计算） */
   const lightRec = LIGHT_ENGINE.recommend({
@@ -117,7 +130,7 @@ function compute() {
   }
 
   if (!cam) {
-    return { error: 'no-camera', need: camRec.need, camRec, fovW, fovH, tol, wd, lightRec };
+    return { error: 'no-camera', need: camRec.need, camRec, fovW, fovH, tol, wd, lightRec, stitchInfo, totalFovW, totalFovH };
   }
 
   /* 3. 目标倍率与焦距 */
@@ -212,14 +225,60 @@ function compute() {
     dofBest: passed[0] ? passed[0].dof : 0,
     needTele, teleMode, perspErr,
     need: camRec.need,
-    lightRec, wdSuggest
+    lightRec, wdSuggest, stitchInfo, totalFovW, totalFovH
   };
+}
+
+/* 拼接方案卡片：开关打开时展示台数矩阵与每台视野 */
+function renderStitch(R) {
+  const host = $('out-stitch');
+  if (!host) return;
+  const S2 = R.stitchInfo;
+  if (!S2) { host.innerHTML = ''; return; }
+
+  const b = S2.best;
+  const single = S2.single;
+  const grid = [];
+  for (let y = 0; y < b.ny; y++) {
+    for (let x = 0; x < b.nx; x++) grid.push('<i></i>');
+  }
+  const topCam = b.camRec && b.camRec.list.find(c => !c.fails.length);
+  const camLabel = topCam ? `${topCam.cam.brand} ${topCam.cam.model}（${topCam.cam.w}×${topCam.cam.h}）` : '每台视野无可用相机';
+
+  let head, note;
+  if (single.feasible) {
+    head = `<b>单机即可覆盖</b>：${S2.totalFov.w}×${S2.totalFov.h}mm @ ${S2.tolerance}mm，库内最大相机 ${single.maxCam.brand} ${single.maxCam.model} 可满足，无需拼接。`;
+    note = '';
+  } else {
+    const practicalCls = b.practical ? 'ok' : 'warn';
+    head = `<b>单机无法覆盖</b>，需 <b>${b.nx}×${b.ny} = ${b.count} 台</b>拼接。每台视野 <b>${fmt(b.eachW, 0)}×${fmt(b.eachH, 0)}mm</b>，推荐 ${camLabel}。`;
+    note = b.practical
+      ? `<div class="notice ok"><span class="ico">✓</span><div>该台数在常规产线可接受范围（≤9 台），相机页签按<b>每台视野</b>给出型号。每台若用大靶面相机，可能需配大像圈长焦镜头——若镜头页无匹配，可调大 WD 或改用远心/大像圈镜头。</div></div>`
+      : `<div class="notice warn"><span class="ico">!</span><div>${b.count} 台拼接装配复杂、标定成本高，工程上通常不可行。建议：放宽精度、缩小单次视野改为运动扫描，或改用线阵相机（超出本工具面阵模型）。</div></div>`;
+  }
+
+  host.innerHTML = `
+    <div class="stitch-card ${single.feasible ? '' : 'active'}">
+      <div class="stitch-head">多相机拼接评估 <span class="stitch-badge">${S2.totalFov.w}×${S2.totalFov.h}mm</span></div>
+      <div class="stitch-body">${head}</div>
+      ${single.feasible ? '' : `
+      <div class="stitch-grid" style="grid-template-columns: repeat(${b.nx}, 1fr)">
+        ${grid.join('')}
+      </div>
+      <div class="stitch-meta">
+        <span>单机所需 ${single.need.pxW}×${single.need.pxH}px</span>
+        <span>库内最大 ${single.maxCam.w}×${single.maxCam.h}px</span>
+        <span>每台 ${fmt(b.eachW, 0)}×${fmt(b.eachH, 0)}mm</span>
+      </div>
+      ${note}`}
+    </div>`;
 }
 
 /* ---------------- 渲染 ---------------- */
 function render() {
   const R = compute();
   LAST = R;
+  renderStitch(R);
   const outLenses = $('out-lenses');
   const outCams = $('out-cams');
   const outMetrics = $('out-metrics');

@@ -422,6 +422,79 @@ const ENGINE = {
     };
   },
 
+  /* 多相机拼接：大视野 + 严精度下单机无解时，给出最小可行拼接方案
+     思路：像素需求 ∝ 视野 / (精度/3)。库内最大相机单台能覆盖的视野 =
+     相机像素 × (精度/3)。总视野超出时，按 nx×ny 个相机平铺，每台视野 = 总视野/nx,ny。 */
+  suggestStitch({ fovW, fovH, tolerance, wd }) {
+    const need = this.requiredPixels(fovW, fovH, tolerance);
+    const maxCam = CAMERAS.reduce((a, c) => c.w * c.h > a.w * a.h ? c : a, CAMERAS[0]);
+    const pixelRes = tolerance / 3;
+
+    /* 单机是否可行：库内像素最大相机能否满足 */
+    const singleFeasible = maxCam.w >= need.pxW && maxCam.h >= need.pxH;
+
+    /* 单台最大相机在给定精度下可覆盖的视野 */
+    const singleCoverW = maxCam.w * pixelRes;
+    const singleCoverH = maxCam.h * pixelRes;
+    const nx = Math.max(1, Math.ceil(fovW / singleCoverW));
+    const ny = Math.max(1, Math.ceil(fovH / singleCoverH));
+    const count = nx * ny;
+    const eachW = fovW / nx;
+    const eachH = fovH / ny;
+
+    /* 每台视野的相机推荐（复用引擎评分） */
+    const camRec = this.recommendCameras(eachW, eachH, tolerance, {
+      moving: false, budget: 'any'
+    });
+
+    /* 候选方案：从单机到最优，列出中间档供比较 */
+    const plans = [];
+    const seen = {};
+    const addPlan = (gx, gy) => {
+      const key = gx + 'x' + gy;
+      if (seen[key]) return;
+      seen[key] = 1;
+      const w = fovW / gx, h = fovH / gy;
+      const needEach = this.requiredPixels(w, h, tolerance);
+      const rec = this.recommendCameras(w, h, tolerance, { moving: false, budget: 'any' });
+      plans.push({
+        nx: gx, ny: gy, count: gx * gy,
+        eachW: w, eachH: h, need: needEach, camRec: rec,
+        feasible: rec.list.some(c => !c.fails.length)
+      });
+    };
+    addPlan(1, 1);
+    if (!singleFeasible) {
+      /* 给出 2×2 到最优档的递进方案 */
+      const steps = new Set();
+      for (let k = 2; k <= Math.max(nx, ny); k++) steps.add(k);
+      steps.add(nx); steps.add(ny);
+      [...steps].sort((a, b) => a - b).forEach(k => {
+        const gx = Math.min(k, nx), gy = Math.min(k, ny);
+        if (gx >= 1 && gy >= 1) addPlan(Math.max(gx, 1), Math.max(gy, 1));
+      });
+      addPlan(nx, ny);
+    }
+    plans.sort((a, b) => a.count - b.count);
+
+    const best = plans.find(p => p.count === count && p.feasible) || plans[plans.length - 1];
+
+    return {
+      totalFov: { w: fovW, h: fovH },
+      tolerance,
+      wd,
+      pixelRes,
+      single: { feasible: singleFeasible, need, maxCam, coverW: singleCoverW, coverH: singleCoverH },
+      plans,
+      best: {
+        nx: best.nx, ny: best.ny, count: best.count,
+        eachW: best.eachW, eachH: best.eachH,
+        need: best.need, camRec: best.camRec, feasible: best.feasible,
+        practical: best.count <= 9
+      }
+    };
+  },
+
   /* 相机推荐 */
   recommendCameras(fovW, fovH, tolerance, opts) {
     const { moving, budget } = opts;

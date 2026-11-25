@@ -400,6 +400,63 @@ assert(Object.keys(LS).length >= 7, `被测物类型数 ≥7（现 ${Object.keys
 }
 
 /* ============================================================
+   第八部分：多相机拼接（大视野 + 严精度时自动算台数）
+   ============================================================ */
+section('多相机拼接 · suggestStitch');
+assert(typeof ENGINE.suggestStitch === 'function', '引擎提供 suggestStitch()');
+
+if (typeof ENGINE.suggestStitch === 'function') {
+  /* 契约字段 */
+  const s0 = ENGINE.suggestStitch({ fovW: 800, fovH: 600, tolerance: 0.3, wd: 800 });
+  ['totalFov', 'tolerance', 'single', 'plans', 'best'].forEach(k =>
+    assert(k in s0, `拼接结果含字段 ${k}`));
+  assert(s0.totalFov.w === 800 && s0.totalFov.h === 600, 'totalFov 保留客户总视野');
+
+  /* 单机可行性：0.5mm 精度下 800×600 单机可解，0.3mm 单机不可解 */
+  const sFine = ENGINE.suggestStitch({ fovW: 800, fovH: 600, tolerance: 0.5, wd: 1000 });
+  const sMid  = ENGINE.suggestStitch({ fovW: 800, fovH: 600, tolerance: 0.3, wd: 1000 });
+  assert(sFine.single.feasible === true, '800×600 @0.5mm 单机可行');
+  assert(sMid.single.feasible === false, '800×600 @0.3mm 单机不可行');
+  const maxCamW = Math.max(...CAMERAS.map(c => c.w));
+  assert(sMid.single.need.pxW > maxCamW, '0.3mm 单机所需像素超过库内最大相机');
+
+  /* 台数矩阵：各精度下最小可行拼接，与引擎实算对齐 */
+  const cases = [
+    { tol: 0.5, count: 1,  nx: 1, ny: 1 },
+    { tol: 0.3, count: 4,  nx: 2, ny: 2 },
+    { tol: 0.2, count: 9,  nx: 3, ny: 3 },
+    { tol: 0.1, count: 25, nx: 5, ny: 5 }
+  ];
+  cases.forEach(c => {
+    const r = ENGINE.suggestStitch({ fovW: 800, fovH: 600, tolerance: c.tol, wd: 800 });
+    assert(r.best && r.best.count === c.count,
+      `800×600 @${c.tol}mm 建议 ${c.count} 台（现 ${r.best && r.best.count}）`);
+    assert(r.best && r.best.nx === c.nx && r.best.ny === c.ny,
+      `@${c.tol}mm 排布 ${c.nx}×${c.ny}`);
+    assert(r.best && Math.abs(r.best.eachW * r.best.nx - 800) < 0.01,
+      `@${c.tol}mm 每台视野宽 × 台数 = 总视野`);
+    assert(r.best && r.best.camRec && r.best.camRec.list.some(c2 => !c2.fails.length),
+      `@${c.tol}mm 每台视野能配到实际相机`);
+  });
+
+  /* 现实性标记：25 台应判为不现实 */
+  const s25 = ENGINE.suggestStitch({ fovW: 800, fovH: 600, tolerance: 0.1, wd: 800 });
+  assert(s25.best.practical === false, '25 台方案标记 practical=false');
+  const s4 = ENGINE.suggestStitch({ fovW: 800, fovH: 600, tolerance: 0.3, wd: 800 });
+  assert(s4.best.practical === true, '4 台方案标记 practical=true');
+
+  /* 非对称视野：总视野宽高比影响排布 */
+  const sWide = ENGINE.suggestStitch({ fovW: 1000, fovH: 200, tolerance: 0.3, wd: 800 });
+  assert(sWide.best.nx > sWide.best.ny, '宽扁视野横向台数多于纵向');
+
+  /* 台数随精度单调不减 */
+  const counts = [0.5, 0.4, 0.3, 0.2, 0.1].map(t =>
+    ENGINE.suggestStitch({ fovW: 800, fovH: 600, tolerance: t, wd: 800 }).best.count);
+  assert(counts.every((v, i) => i === 0 || v >= counts[i - 1]),
+    `精度收紧台数单调不减: ${counts.join('→')}`);
+}
+
+/* ============================================================
    汇总
    ============================================================ */
 console.log('\n' + '='.repeat(50));
