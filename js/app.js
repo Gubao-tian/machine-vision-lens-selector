@@ -185,12 +185,12 @@ function compute() {
       cntByF[key] = (cntByF[key] || 0) + 1;
       deduped.push(p);
     }
-    if (deduped.length >= 6) break;
+    if (deduped.length >= DISPLAY_CAPS.lenses) break;
   }
-  if (deduped.length < 6) {
+  if (deduped.length < DISPLAY_CAPS.lenses) {
     for (const p of passed) {
       if (!deduped.includes(p)) deduped.push(p);
-      if (deduped.length >= 6) break;
+      if (deduped.length >= DISPLAY_CAPS.lenses) break;
     }
   }
 
@@ -276,7 +276,7 @@ function render() {
     </div>`;
 
   /* ── 相机推荐 ── */
-  const topCams = R.camRec.list.filter(c => !c.fails.length).slice(0, 3);
+  const topCams = R.camRec.list.filter(c => !c.fails.length).slice(0, DISPLAY_CAPS.cameras);
   if (S.camMode === 'auto') {
     outCams.innerHTML = topCams.map((c, i) => {
       const active = R.activeCamEntry && c.cam.id === R.activeCamEntry.cam.id;

@@ -3,6 +3,10 @@
    所有型号参数为示例近似值，量产项目须以厂商最新规格书复核
    ============================================================ */
 
+/* ---------- 界面展示上限：让新入库品牌真正进入推荐列表 ----------
+   相机 3→5、镜头 6→8、光源 6→8；仅控制展示数量，不改变硬性筛选 */
+const DISPLAY_CAPS = { cameras: 5, lenses: 8, lights: 8 };
+
 /* ---------- 传感器格式：标称像圈直径 (mm) ---------- */
 const FORMAT_CIRCLE = {
   '1/3"':   6.0,
@@ -763,12 +767,12 @@ const LIGHT_ENGINE = {
     for (const p of out) {
       const k = p.light.form;
       if ((byForm[k] || 0) < 2) { byForm[k] = (byForm[k] || 0) + 1; dedup.push(p); }
-      if (dedup.length >= 6) break;
+      if (dedup.length >= DISPLAY_CAPS.lights) break;
     }
-    if (dedup.length < 5) {
+    if (dedup.length < DISPLAY_CAPS.lights - 1) {
       for (const p of out) {
         if (dedup.indexOf(p) < 0) dedup.push(p);
-        if (dedup.length >= 6) break;
+        if (dedup.length >= DISPLAY_CAPS.lights) break;
       }
     }
 

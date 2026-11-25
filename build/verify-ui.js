@@ -17,6 +17,10 @@ document.addEventListener('DOMContentLoaded', function () {
     ${setup}
     render();
     parts.push('lensCount=' + (LAST.passed ? LAST.passed.length : -1));
+    parts.push('camShown=' + document.querySelectorAll('#out-cams .lens-card').length);
+    parts.push('lensShown=' + document.querySelectorAll('#out-lenses .lens-card').length);
+    parts.push('lightShown=' + document.querySelectorAll('#out-lights .light-card').length);
+    parts.push('lightBrands=' + [...new Set((LAST.lightRec ? LAST.lightRec.lights : []).map(function(p){return p.light.brand;}))].join('+'));
     parts.push('top=' + (LAST.passed && LAST.passed[0] ? LAST.passed[0].lens.model : 'none'));
     parts.push('topF=' + (LAST.passed && LAST.passed[0] ? LAST.passed[0].lens.f : 0));
     parts.push('fTarget=' + LAST.fTarget.toFixed(1));
@@ -47,6 +51,19 @@ make('case-screenshot.html', `
   document.getElementById('in-hd').value = 1;
   S.camMode = 'manual';
   S.manual = { w: 2448, h: 2048, px: 3.45, fmt: '2/3"', mount: 'C' };
+`);
+
+/* 工况三：通用宽松工况（自动相机）→ 检验相机/镜头/光源展示上限放宽后新品牌露出 */
+make('case-display-caps.html', `
+  document.getElementById('in-fovw').value = 80;
+  document.getElementById('in-fovh').value = 60;
+  document.getElementById('in-tol').value = 0.2;
+  document.getElementById('in-wd').value = 300;
+  document.getElementById('in-hd').value = 1;
+  S.camMode = 'auto';
+  S.lightScene = 'general';
+  S.lightTarget = 'defect';
+  S.lightReflect = 'mid';
 `);
 
 /* 工况二：FOV40x30 / WD1000 → 所需焦距约 190mm 超范围，应出现应用 WD 按钮 */

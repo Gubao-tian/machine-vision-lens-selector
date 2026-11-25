@@ -9,6 +9,9 @@ const { ENGINE, LENSES, CAMERAS, LIGHT_ENGINE, LIGHTS, LIGHT_SCENES } = vm.runIn
   code + '\n;({ ENGINE, LENSES, CAMERAS, LIGHT_ENGINE, LIGHTS, LIGHT_SCENES })', ctx
 );
 
+/* 展示上限配置：常量未定义时安全降级为 null，保证 RED 阶段干净失败 */
+const DISPLAY_CAPS = vm.runInContext('typeof DISPLAY_CAPS !== "undefined" ? DISPLAY_CAPS : null', ctx);
+
 let PASS = 0, FAIL = 0;
 function assert(cond, msg) {
   if (cond) { PASS++; }
@@ -185,7 +188,7 @@ section('光源引擎 · 约束响应');
   const cnt = {};
   r.lights.forEach(p => { cnt[p.light.form] = (cnt[p.light.form] || 0) + 1; });
   assert(Object.values(cnt).every(v => v <= 2), '每个光源类型最多保留 2 款');
-  assert(r.lights.length <= 6, '推荐数不超过 6 款');
+  assert(r.lights.length <= 8, '推荐数不超过 8 款');
 }
 
 /* ============================================================
@@ -332,6 +335,25 @@ section('产线主流品牌 · 相机/镜头/光源扩充');
   assert(ccsForms.has('dome'), 'CCS 含平面无影(穹顶)光源');
   assert(ccsForms.has('coax'), 'CCS 含同轴光源');
   assert(ccsForms.has('ring-high'), 'CCS 含环形光源');
+}
+
+/* ============================================================
+   第六部分：界面展示上限放宽（让新入库品牌真正露出）
+   ============================================================ */
+section('展示上限 · 新品牌进入推荐列表');
+assert(DISPLAY_CAPS !== null && typeof DISPLAY_CAPS === 'object', '导出展示上限配置 DISPLAY_CAPS');
+assert(DISPLAY_CAPS && DISPLAY_CAPS.cameras >= 5,
+  `相机展示上限 ≥5（现 ${DISPLAY_CAPS ? DISPLAY_CAPS.cameras : '未定义'}）`);
+assert(DISPLAY_CAPS && DISPLAY_CAPS.lenses >= 8,
+  `镜头展示上限 ≥8（现 ${DISPLAY_CAPS ? DISPLAY_CAPS.lenses : '未定义'}）`);
+assert(DISPLAY_CAPS && DISPLAY_CAPS.lights >= 8,
+  `光源展示上限 ≥8（现 ${DISPLAY_CAPS ? DISPLAY_CAPS.lights : '未定义'}）`);
+{
+  /* 放宽后光源应能真正露出 ≥7 款（每类 2 款 × 多类），而非被 6 款截断 */
+  const r = LIGHT_ENGINE.recommend({ ...baseCtx, scene: 'general', target: 'defect', reflect: 'mid' });
+  console.log(`通用场景光源露出 ${r.lights.length} 款，含品牌: ${[...new Set(r.lights.map(p => p.light.brand))].join('/')}`);
+  assert(r.lights.length >= 7, `光源推荐露出 ≥7 款（现 ${r.lights.length}）`);
+  assert(r.lights.length <= (DISPLAY_CAPS ? DISPLAY_CAPS.lights : 8), '光源露出不超过配置上限');
 }
 
 /* ============================================================
