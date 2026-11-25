@@ -113,6 +113,14 @@ const LENSES = [
   { brand:'LumaSpec', series:'LS-FFL', model:'LS-FFL-1339', f:100, fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:2.00, mp:8, dist:'低', tier:'mid', type:'fa' },
   { brand:'海康威视', series:'MVL-KF', model:'MVL-KF10020M-5MP-NIR', f:100, fn:2.0, ic:16, fmt:'1"', mount:'C', mod:0.50, mp:5, dist:'低', tier:'high', type:'fa' },
 
+  /* ── 大像圈 FA 定焦 · 1.1"（真实型号 Kowa LM-FC24M 系列）──
+     1.1" 传感器对角 φ17.6mm，普通 C 口镜头像圈仅 φ16mm（1" 档）会严重暗角。
+     Kowa FC24M 系列像圈 φ17.6~19mm、24MP、C 口、MOD 0.15m，
+     专门覆盖 IMX253/304/530/540 等 1.1" 大靶面传感器。 */
+  { brand:'Kowa', series:'LM-FC24M', model:'LM50FC24M', f:50,  fn:2.8, ic:18, fmt:'1.1"', mount:'C', mod:0.15, mp:24, dist:'低', tier:'high', type:'fa' },
+  { brand:'Kowa', series:'LM-FC24M', model:'LM75FC24M', f:75,  fn:2.5, ic:18, fmt:'1.1"', mount:'C', mod:0.15, mp:24, dist:'低', tier:'high', type:'fa' },
+  { brand:'Kowa', series:'LM-FC24M', model:'LM100FC24M', f:100, fn:3.5, ic:19, fmt:'1.1"', mount:'C', mod:0.15, mp:24, dist:'低', tier:'high', type:'fa' },
+
   /* ── CST康视达 物方远心 · 2/3"（真实型号 CST-MF 系列）──
      远心工作距离固定，不可调；匹配依据为固定放大倍率 */
   { brand:'CST康视达', series:'MF远心', model:'CST-MF005F90H-D45', f:null, mag:0.5, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:90,  dof:1.20, mp:5, dist:'极低', tier:'high', type:'tele' },

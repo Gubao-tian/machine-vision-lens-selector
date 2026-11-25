@@ -594,9 +594,12 @@ function analyzeFailure(failed, R) {
        可反向调整视野或工作距离使需求靠拢标准焦距，或向厂商索取中间焦距样本。`]);
   }
   if (share('像圈不足') > 0.30) {
+    const maxIC = Math.max(...LENSES.map(l => l.ic || 0));
+    const icFmt = maxIC >= 17.6 ? '1.1"' : maxIC >= 16 ? '1"' : maxIC >= 11 ? '2/3"' : '1/1.8"';
     out.push(['bad', '相机靶面超出镜头库覆盖范围',
-      `相机对角 φ${fmt(R.cam.diag, 1)}mm，库内镜头最大像圈为 φ16mm（1" 档）。
-       需选用大靶面镜头系列，或换用更小靶面相机。`]);
+      `相机对角 φ${fmt(R.cam.diag, 1)}mm，库内镜头最大像圈为 φ${fmt(maxIC, 1)}mm（${icFmt} 档）。
+       该相机靶面超出全部内置镜头的覆盖能力：需选用更大像圈的镜头系列（如 1.1" 大靶面镜头），
+       或换用更小靶面（如 2/3"）的相机。`]);
   }
   if (share('解析力差距过大') > 0.25) {
     out.push(['warn', '镜头库解析力跟不上相机',

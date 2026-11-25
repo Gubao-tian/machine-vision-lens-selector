@@ -243,6 +243,47 @@ section('ENGINE.suggestWD · 焦距超范围自动反推工作距离');
 }
 
 /* ============================================================
+   第四部分：大像圈镜头（1.1" 相机 / 截图 FOV80x68 / WD635）
+   ============================================================ */
+section('大像圈镜头 · 覆盖 1.1" 靶面（φ17.5mm）');
+{
+  /* 截图工况：1.1" 12MP 相机对角 φ17.5mm，库内原最大像圈 φ16mm → 全军覆没 */
+  const c11 = CAMERAS.find(x => x.id === 'cam-12'); // CST-CG123-31UMD 1.1"
+  assert(!!c11, '1.1" 相机 cam-12 存在');
+  const cam11 = ENGINE.camera(c11.w, c11.h, c11.px, c11.fmt, c11.mount);
+  console.log(`1.1" 相机对角 φ${cam11.diag.toFixed(2)}mm`);
+  assert(Math.abs(cam11.diag - 17.5) < 0.5, `相机对角约 17.5mm（现 ${cam11.diag.toFixed(2)}）`);
+
+  /* 库里必须存在像圈 ≥17.6mm 的真实镜头（Kowa LM-FC24M 系列 1.1"） */
+  const bigIC = LENSES.filter(l => l.ic >= 17.6);
+  console.log(`像圈 ≥17.6mm 镜头: ${bigIC.map(l => l.model + '(φ' + l.ic + ')').join(', ') || '无'}`);
+  assert(bigIC.length >= 2, `存在至少 2 款 1.1" 大像圈镜头（现 ${bigIC.length} 款）`);
+  assert(bigIC.some(l => l.f >= 75), '大像圈镜头含 75mm 档');
+  assert(bigIC.some(l => l.f >= 100), '大像圈镜头含 100mm 档');
+  assert(bigIC.every(l => l.mp >= 20), '大像圈镜头解析力 ≥20MP，适配 12MP 相机');
+  assert(bigIC.every(l => l.mount === 'C'), '大像圈镜头为 C 口，与相机匹配');
+  const kowa = LENSES.filter(l => l.brand === 'Kowa');
+  assert(kowa.length >= 3, `镜头库含 Kowa FC24M 系列 ≥3 款（现 ${kowa.length}）`);
+
+  /* 截图工况复现：FOV 80×68 精度 0.12 WD 635，指定 1.1" 相机 */
+  const fovW = 80, fovH = 68, tol = 0.12, wd = 635, heightDiff = 1;
+  const mReq = ENGINE.target(fovW, fovH, cam11).m;
+  const fNeed = wd * mReq / (1 + mReq);
+  console.log(`截图工况: 倍率 ${mReq.toFixed(3)}×  所需焦距 ${fNeed.toFixed(1)}mm`);
+  const ctx = {
+    cam: cam11, targetM: mReq, fovW, fovH, wd, tol, heightDiff,
+    budget: 'any', teleMode: 'off', fnum: 4, moving: true
+  };
+  const coverage = LENSES.filter(l => l.ic >= cam11.diag * 0.97);
+  console.log(`像圈可覆盖 1.1" 相机的镜头: ${coverage.map(l => l.model).join(', ') || '无'}`);
+  assert(coverage.length >= 2, `至少 2 款镜头像圈覆盖 1.1" 相机（现 ${coverage.length}）`);
+  const passed = LENSES.filter(l => ENGINE.filter(l, ctx).length === 0);
+  console.log(`硬性约束后通过: ${passed.map(l => l.model + '(' + l.f + 'mm)').join(', ') || '无'}`);
+  assert(passed.length > 0, `截图工况不再零结果（现 ${passed.length} 款）`);
+  assert(passed.some(l => l.ic >= 17.6), '通过的镜头含 1.1" 大像圈型号');
+}
+
+/* ============================================================
    汇总
    ============================================================ */
 console.log('\n' + '='.repeat(50));
