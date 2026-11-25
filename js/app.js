@@ -38,6 +38,22 @@ const fmt = (n, d = 2) => {
 
 let LAST = null;   // 最近一次计算结果，供摘要复用
 
+/* 结果页签：cam / lens / light */
+function switchTab(name) {
+  document.querySelectorAll('#result-tabs button').forEach(b => {
+    b.classList.toggle('on', b.dataset.tab === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('hide', p.dataset.panel !== name);
+  });
+}
+function updateTabCounts(camN, lensN, lightN) {
+  const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+  set('tab-n-cam', camN);
+  set('tab-n-lens', lensN);
+  set('tab-n-light', lightN);
+}
+
 /* ---------------- 输入同步 ---------------- */
 function syncFromDOM() {
   S.fovW = num('in-fovw', S.fovW);
@@ -208,6 +224,7 @@ function render() {
 
   /* ── 无可用相机 ── */
   if (R.error === 'no-camera') {
+    updateTabCounts(0, 0, R.lightRec ? R.lightRec.lights.length : 0);
     outMetrics.innerHTML = '';
     outCams.innerHTML = `
       <div class="notice bad"><span class="ico">!</span>
@@ -312,10 +329,15 @@ function render() {
       </div>`;
   }
 
+  updateTabCounts(
+    S.camMode === 'auto' ? topCams.length : 1,
+    R.passed.length,
+    R.lightRec ? R.lightRec.lights.length : 0
+  );
   const cnt = $('out-cam-count');
   if (cnt) {
     cnt.textContent = S.camMode === 'auto'
-      ? `${topCams.length} 档可选 · 点击切换`
+      ? `${topCams.length} 档可选 · 点击卡片切换相机后自动查看匹配镜头`
       : '手动指定参数';
   }
   const lcnt = $('out-lens-count');
@@ -746,7 +768,17 @@ function bindCamPick() {
     el.addEventListener('click', () => {
       S.camId = el.dataset.cam;
       render();
+      switchTab('lens');   // 选完相机直接看匹配镜头，省一次点击
     });
+  });
+}
+
+function bindTabs() {
+  const tabs = $('result-tabs');
+  if (!tabs) return;
+  tabs.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-tab]');
+    if (btn) switchTab(btn.dataset.tab);
   });
 }
 
@@ -1079,6 +1111,7 @@ function printSummary() {
 function init() {
   bindSegs();
   bindInputs();
+  bindTabs();
 
   /* 兜底：渲染异常时给出可见提示而非空白 */
   window.addEventListener('error', (e) => {

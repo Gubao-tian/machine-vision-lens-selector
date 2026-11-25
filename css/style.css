@@ -344,6 +344,68 @@ input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   font-family: var(--mono);
 }
 
+/* ---------- 结果页签 ---------- */
+.result-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  margin-top: 14px;
+}
+.result-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: .15s;
+  white-space: nowrap;
+}
+.result-tabs button:hover { color: var(--accent); background: var(--panel-2); }
+.result-tabs button.on {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 650;
+  box-shadow: 0 2px 6px rgba(10,107,124,.22);
+}
+.tab-n {
+  display: inline-grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #edf2f5;
+  color: var(--ink-2);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-family: var(--mono);
+}
+.result-tabs button.on .tab-n { background: rgba(255,255,255,.24); color: #fff; }
+.tab-panel { min-width: 0; }
+.tab-desc {
+  margin: 9px 2px 9px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+@media (max-width: 480px) {
+  .result-tabs button { font-size: 12px; padding: 9px 3px; gap: 4px; }
+  .tab-n { min-width: 17px; height: 17px; font-size: 10px; padding: 0 4px; }
+}
+
 .lens-card {
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr);
@@ -742,6 +804,9 @@ details.detail[open] > summary::after { content: "－"; }
   body { background: #fff; padding: 0; }
   .topbar, .col-input, .bottombar, .modal, .no-print, .sec-head .count { display: none !important; }
   .layout { display: block; padding: 0; max-width: none; }
+  .result-tabs { display: none !important; }
+  .tab-panel.hide { display: block !important; }
+  .tab-panel { break-inside: avoid; }
   .panel, .lens-card, .metric, .light-card, .light-brief { box-shadow: none; break-inside: avoid; }
   .lens-card, .light-card, .light-brief { border-color: #ccc; }
   details.detail { display: none; }

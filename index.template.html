@@ -212,23 +212,24 @@
 
     <div class="metrics" id="out-metrics"></div>
 
-    <div class="sec-head">
-      <h2>推荐相机规格</h2>
-      <span class="count" id="out-cam-count"></span>
+    <div class="result-tabs" id="result-tabs">
+      <button type="button" class="on" data-tab="cam">推荐相机<span class="tab-n" id="tab-n-cam">—</span></button>
+      <button type="button" data-tab="lens">匹配镜头<span class="tab-n" id="tab-n-lens">—</span></button>
+      <button type="button" data-tab="light">光源推荐<span class="tab-n" id="tab-n-light">—</span></button>
     </div>
-    <div id="out-cams"></div>
 
-    <div class="sec-head">
-      <h2>匹配镜头</h2>
-      <span class="count" id="out-lens-count"></span>
+    <div class="tab-panel" data-panel="cam">
+      <p class="tab-desc" id="out-cam-count"></p>
+      <div id="out-cams"></div>
     </div>
-    <div id="out-lenses"></div>
-
-    <div class="sec-head">
-      <h2>光源推荐</h2>
-      <span class="count" id="out-light-count"></span>
+    <div class="tab-panel hide" data-panel="lens">
+      <p class="tab-desc" id="out-lens-count"></p>
+      <div id="out-lenses"></div>
     </div>
-    <div id="out-lights"></div>
+    <div class="tab-panel hide" data-panel="light">
+      <p class="tab-desc" id="out-light-count"></p>
+      <div id="out-lights"></div>
+    </div>
 
     <div class="sec-head">
       <h2>风险与校核</h2>
