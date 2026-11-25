@@ -508,6 +508,47 @@ if (typeof ENGINE.suggestStitch === 'function') {
 }
 
 /* ============================================================
+   第九部分：打印输出包含计算过程
+   ============================================================ */
+section('打印 · 计算过程随打印输出');
+
+/* 打印文档生成器未实现时安全降级为 null，保证 RED 阶段干净失败 */
+const PRINT_ENGINE = vm.runInContext('typeof PRINT_ENGINE !== "undefined" ? PRINT_ENGINE : null', ctx);
+assert(!!PRINT_ENGINE, '打印文档生成器 PRINT_ENGINE 存在');
+
+if (PRINT_ENGINE) {
+  const detailHTML = '<table class="calc-table"><tr><td>所需焦距 f</td><td>f = WD·β/(1+β)</td></tr></table>';
+  const doc = PRINT_ENGINE.buildDocumentHTML({
+    imageHTML: '<img src="data:image/png;base64,AAAA">',
+    detailHTML,
+    title: '工业视觉选型方案',
+    date: '2026-11-25'
+  });
+
+  assert(typeof doc === 'string' && doc.length > 200, '生成完整 HTML 文档字符串');
+  assert(/^<!DOCTYPE html>/i.test(doc), '文档含 DOCTYPE');
+  assert(/@page\s*\{[^}]*A4/.test(doc), '打印文档使用 A4 纸张');
+  assert(doc.indexOf('data:image/png;base64,AAAA') >= 0, '打印文档含方案摘要图');
+  assert(doc.indexOf('计算过程') >= 0, '打印文档含"计算过程"标题');
+  assert(doc.indexOf('所需焦距 f') >= 0 && doc.indexOf('f = WD·β/(1+β)') >= 0, '打印文档含计算过程明细行');
+  assert(doc.indexOf('工业视觉选型方案') >= 0, '打印文档含标题');
+  assert(doc.indexOf('2026-11-25') >= 0, '打印文档含日期');
+
+  /* 明细为空时仍生成合法文档、不抛错 */
+  const docEmpty = PRINT_ENGINE.buildDocumentHTML({ imageHTML: '', detailHTML: '', title: 'T', date: '' });
+  assert(typeof docEmpty === 'string' && docEmpty.indexOf('计算过程') >= 0, '无明细时文档仍含计算过程区块');
+}
+
+/* 整页打印（底栏按钮）：打印样式不得再隐藏计算过程明细 */
+const cssPrint = fs.readFileSync(path.join(__dirname, '..', 'css', 'style.css'), 'utf8');
+const atPrint = cssPrint.match(/@media print\s*\{([\s\S]*?)\n\}/);
+assert(!!atPrint, '样式中存在 @media print 规则');
+if (atPrint) {
+  assert(!/details\.detail\s*\{\s*display:\s*none/.test(atPrint[1]), '整页打印样式不再隐藏计算过程明细');
+  assert(/details\.detail[\s\S]{0,120}display:\s*block/.test(atPrint[1]), '整页打印样式让计算过程明细可见');
+}
+
+/* ============================================================
    汇总
    ============================================================ */
 console.log('\n' + '='.repeat(50));

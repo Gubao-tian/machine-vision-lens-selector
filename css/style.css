@@ -831,7 +831,9 @@ details.detail[open] > summary::after { content: "－"; }
   .tab-panel { break-inside: avoid; }
   .panel, .lens-card, .metric, .light-card, .light-brief { box-shadow: none; break-inside: avoid; }
   .lens-card, .light-card, .light-brief { border-color: #ccc; }
-  details.detail { display: none; }
+  details.detail { display: block; }
+  details.detail > summary { display: none; }
+  details.detail > #out-detail-body { display: block; }
   @page { margin: 14mm; }
 }
 

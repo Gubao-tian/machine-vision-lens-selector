@@ -31,6 +31,16 @@ document.addEventListener('DOMContentLoaded', function () {
     var apply = document.querySelector('.btn-apply-wd');
     parts.push('rescueBtn=' + (apply ? apply.dataset.wd : 'none'));
     parts.push('lensTabText=' + (document.getElementById('out-lenses').textContent || '').slice(0, 40).replace(/\\s+/g, ' '));
+    var pd = '';
+    try {
+      pd = (typeof PRINT_ENGINE !== 'undefined' && PRINT_ENGINE.buildDocumentHTML)
+        ? PRINT_ENGINE.buildDocumentHTML({
+            imageHTML: '<img>', detailHTML: (LAST && !LAST.error) ? buildDetail(LAST) : '',
+            title: 't', date: 'd'
+          }) : '';
+    } catch (e) {}
+    parts.push('printHasCalc=' + (pd.indexOf('计算过程') >= 0 && pd.indexOf('calc-table') >= 0));
+    parts.push('printHasA4=' + (pd.indexOf('size:A4') >= 0));
     var sc = document.getElementById('out-stitch');
     parts.push('stitchText=' + (sc ? sc.textContent.replace(/\\s+/g, ' ').slice(0, 90) : 'none'));
     parts.push('stitchGrid=' + (sc ? sc.querySelectorAll('.stitch-grid i').length : -1));

@@ -935,4 +935,41 @@ const LIGHT_ENGINE = {
   }
 };
 
+/* ============================================================
+   打印文档：把方案摘要图与计算过程明细合成单页 A4 打印/存 PDF 文档
+   纯函数——图片与明细 HTML 由调用方生成后传入，便于在 Node 环境用 vm 断言
+   ============================================================ */
+const PRINT_ENGINE = {
+  buildDocumentHTML(opts) {
+    const o = opts || {};
+    const title = o.title || '工业视觉选型方案';
+    const date = o.date || '';
+    const imageHTML = o.imageHTML || '';
+    const detailHTML = o.detailHTML || '';
+    return `<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>${title}</title>
+<style>
+@page{size:A4;margin:12mm}
+html,body{margin:0;padding:0;background:#fff;color:#10202c;
+  font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+img{width:100%;max-width:100%;display:block;margin:0 auto 14px}
+.sec-t{font-size:15px;font-weight:700;color:#0a6b7c;margin:16px 0 8px;
+  padding-bottom:6px;border-bottom:2px solid #0a6b7c}
+.calc-table{width:100%;border-collapse:collapse;font-size:11.5px}
+.calc-table td{border:1px solid #dbe3e9;padding:5px 8px;line-height:1.5;vertical-align:top}
+.calc-table td:first-child{color:#5a6f80;width:44%;background:#f6f9fa}
+.calc-table td:last-child{color:#10202c;font-family:ui-monospace,Consolas,monospace;word-break:break-all}
+.calc-table b{color:#0a6b7c}
+.detail-empty{color:#8b9fac;font-size:12px;padding:10px 0}
+.foot{margin-top:14px;color:#8b9fac;font-size:10px;line-height:1.5}
+@media print{img{break-inside:avoid}.calc-table tr{break-inside:avoid}}
+</style></head><body>
+${imageHTML}
+<div class="sec-t">计算过程明细</div>
+${detailHTML || '<div class="detail-empty">（当前输入条件下无可展示的计算过程）</div>'}
+<div class="foot">${date ? ('生成日期：' + date + ' · ') : ''}本方案依据薄透镜近似、3 像素准则与光源场景规则自动生成，仅供方案评估；定型前请以厂商规格书与样机实测为准。</div>
+</body></html>`;
+  }
+};
+
 

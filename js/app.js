@@ -1192,19 +1192,34 @@ function downloadSummary() {
   a.click();
 }
 
-/* 单页 A4 打印摘要图 */
+/* 单页 A4 打印：方案摘要图 + 计算过程明细 */
 function printSummary() {
   const cv = $('modal-canvas-host').querySelector('canvas');
-  if (!cv) { window.print(); return; }
   const w = window.open('', '_blank');
   if (!w) { window.print(); return; }
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-    <title>工业视觉选型方案</title>
-    <style>@page{size:A4;margin:10mm}html,body{margin:0;padding:0}
-    img{width:100%;display:block}</style></head>
-    <body><img src="${cv.toDataURL('image/png')}"></body></html>`);
+  const imageHTML = cv ? `<img src="${cv.toDataURL('image/png')}">` : '';
+  const detailHTML = (LAST && !LAST.error) ? buildDetail(LAST) : '';
+  const d = new Date();
+  const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const doc = PRINT_ENGINE.buildDocumentHTML({
+    imageHTML, detailHTML, title: '工业视觉选型方案', date: dateStr
+  });
+  w.document.write(doc);
   w.document.close();
   setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 350);
+}
+
+/* 整页打印（底栏按钮）：打印前临时展开计算过程明细，打印后还原折叠状态 */
+function printPageWithDetail() {
+  const det = document.querySelector('details.detail');
+  const wasOpen = det ? det.open : false;
+  if (det) det.open = true;
+  const restore = () => {
+    if (det) det.open = wasOpen;
+    window.removeEventListener('afterprint', restore);
+  };
+  window.addEventListener('afterprint', restore);
+  try { window.print(); } catch (e) { restore(); }
 }
 
 /* ---------------- 启动 ---------------- */
@@ -1225,7 +1240,7 @@ function init() {
   $('btn-summary').addEventListener('click', openSummary);
   $('btn-summary-2').addEventListener('click', openSummary);
   $('btn-download').addEventListener('click', downloadSummary);
-  $('btn-print-bar').addEventListener('click', () => window.print());
+  $('btn-print-bar').addEventListener('click', printPageWithDetail);
   $('btn-print-modal').addEventListener('click', printSummary);
   $('modal-close').addEventListener('click', () => $('modal').classList.remove('show'));
   $('modal').addEventListener('click', (e) => {
