@@ -484,6 +484,80 @@ input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 }
 .reason b { color: var(--accent); font-weight: 600; font-family: var(--mono); }
 
+/* ---------- 光源推荐 ---------- */
+.light-brief {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 13px 14px;
+  margin-bottom: 11px;
+}
+.light-brief-top {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px;
+}
+.light-brief p {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+.light-tips {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+@media (min-width: 640px) { .light-tips { grid-template-columns: 1fr 1fr; } }
+.light-tips > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 9px;
+  background: var(--panel-2);
+  border-radius: 6px;
+}
+.tip-k {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: .3px;
+}
+.tip-v { font-size: 11.5px; color: var(--ink-2); line-height: 1.5; }
+
+.light-list { display: block; }
+
+.light-card {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: .18s;
+}
+.light-card:hover { border-color: #b9cdd8; }
+.light-card.top {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 1px var(--accent-2), 0 6px 20px rgba(10,107,124,.13);
+}
+.light-ico {
+  display: grid;
+  place-items: center;
+  color: var(--accent-2);
+  background: var(--accent-bg);
+  border-right: 1px solid var(--line-2);
+}
+.light-card.top .light-ico { background: #d4eef3; }
+.light-body { padding: 12px 13px 13px; min-width: 0; }
+.note-dim { color: var(--muted); font-size: 11.5px; }
+.reason.warnline {
+  margin-top: 7px;
+  color: var(--warn);
+  border-left-color: var(--warn);
+}
+
 /* ---------- 提示条 ---------- */
 .notice {
   display: flex;
@@ -668,8 +742,8 @@ details.detail[open] > summary::after { content: "－"; }
   body { background: #fff; padding: 0; }
   .topbar, .col-input, .bottombar, .modal, .no-print, .sec-head .count { display: none !important; }
   .layout { display: block; padding: 0; max-width: none; }
-  .panel, .lens-card, .metric { box-shadow: none; break-inside: avoid; }
-  .lens-card { border-color: #ccc; }
+  .panel, .lens-card, .metric, .light-card, .light-brief { box-shadow: none; break-inside: avoid; }
+  .lens-card, .light-card, .light-brief { border-color: #ccc; }
   details.detail { display: none; }
   @page { margin: 14mm; }
 }
@@ -684,3 +758,4 @@ details.detail[open] > summary::after { content: "－"; }
   line-height: 1.6;
 }
 .disclaimer b { color: var(--ink-2); }
+

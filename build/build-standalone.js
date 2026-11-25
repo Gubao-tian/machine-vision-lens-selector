@@ -1,11 +1,13 @@
-/* 构建单文件版本：把 CSS / JS 内联进 index.html，规避部署环境对独立资源文件的鉴权拦截 */
+/* 构建单文件版本：从 index.template.html 读取骨架，把 CSS / JS 内联进 index.html
+   规避部署环境对独立资源文件的鉴权拦截。
+   注意：源文件是 index.template.html，产物是 index.html，切勿从 index.html 自身读取。 */
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
-let html = read('index.html');
+let html = read('index.template.html');
 const css = read('css/style.css');
 const dataJs = read('js/lens-data.js');
 const appJs = read('js/app.js');

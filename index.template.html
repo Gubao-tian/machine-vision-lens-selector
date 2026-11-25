@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a6b7c">
+<title>工业视觉选型 · 相机 / 镜头 / 光源自动匹配</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">◉</div>
+    <div>
+      <h1>工业视觉选型</h1>
+      <p>Camera · Lens · Light Selector</p>
+    </div>
+  </div>
+  <button class="btn btn-primary" id="btn-summary">生成方案摘要</button>
+</header>
+
+<div class="layout">
+
+  <!-- ══════════ 输入区 ══════════ -->
+  <div class="col-input">
+
+    <section class="panel">
+      <div class="panel-head">
+        <span class="step-no">1</span>
+        <h2>检测需求</h2>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label>最大视野 FOV <span class="unit">mm</span></label>
+          <div class="row-2">
+            <input type="number" id="in-fovw" value="80" min="0.1" step="1" inputmode="decimal" placeholder="宽">
+            <input type="number" id="in-fovh" value="60" min="0.1" step="1" inputmode="decimal" placeholder="高">
+          </div>
+          <p class="hint">左为宽度、右为高度。含被测物在画面内的最大占用范围。</p>
+        </div>
+
+        <div class="field">
+          <label>精度要求 <span class="unit">mm / 最小可检特征</span></label>
+          <input type="number" id="in-tol" value="0.12" min="0.0005" step="0.005" inputmode="decimal">
+          <p class="hint">按 3 像素准则换算：像素分辨率 = 精度 ÷ 3。填 0.12 即 120 µm。</p>
+        </div>
+
+        <div class="field">
+          <label>工作距离 WD <span class="unit">mm / 镜头前端到物面</span></label>
+          <input type="number" id="in-wd" value="300" min="5" step="10" inputmode="decimal">
+        </div>
+
+        <div class="field">
+          <label>被测物高度差 <span class="unit">mm</span></label>
+          <input type="number" id="in-hd" value="1" min="0" step="0.5" inputmode="decimal">
+          <p class="hint">表面起伏或装配高度差，用于景深与远心判定。</p>
+        </div>
+
+        <div class="field">
+          <label class="chk"><input type="checkbox" id="in-measure" checked>需要尺寸测量（非仅有无判断）</label>
+        </div>
+        <div class="field">
+          <label class="chk"><input type="checkbox" id="in-moving">被测物处于运动状态</label>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <span class="step-no">2</span>
+        <h2>相机规格</h2>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <div class="seg" data-key="cammode">
+            <button data-v="auto" class="on">自动推导</button>
+            <button data-v="manual">指定相机</button>
+          </div>
+        </div>
+
+        <div id="panel-auto">
+          <p class="hint" style="margin-top:2px">
+            由视野与精度反算所需像素数，在下方结果区给出 3 档相机规格，可点击切换，镜头匹配会随之更新。
+          </p>
+        </div>
+
+        <div id="panel-manual" class="hide">
+          <div class="field">
+            <label>分辨率 <span class="unit">px</span></label>
+            <div class="row-2">
+              <input type="number" id="in-camw" value="2448" step="1" inputmode="numeric" placeholder="宽">
+              <input type="number" id="in-camh" value="2048" step="1" inputmode="numeric" placeholder="高">
+            </div>
+          </div>
+          <div class="field">
+            <label>像元尺寸 <span class="unit">µm</span></label>
+            <input type="number" id="in-campx" value="3.45" step="0.05" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label>靶面 <span class="unit">format</span></label>
+            <select id="in-camfmt">
+              <option value='1/3"'>1/3"</option>
+              <option value='1/2.8"'>1/2.8"</option>
+              <option value='1/2"'>1/2"</option>
+              <option value='1/1.8"'>1/1.8"</option>
+              <option value='2/3"' selected>2/3"</option>
+              <option value='1"'>1"</option>
+              <option value='1.1"'>1.1"</option>
+              <option value='4/3"'>4/3"</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>接口 <span class="unit">mount</span></label>
+            <select id="in-cammount">
+              <option value="C" selected>C 口</option>
+              <option value="CS">CS 口</option>
+              <option value="M12">M12</option>
+              <option value="M42">M42</option>
+              <option value="F">F 口</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <span class="step-no">3</span>
+        <h2>镜头偏好</h2>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label>预算档位</label>
+          <div class="seg" data-key="budget">
+            <button data-v="any" class="on">不限</button>
+            <button data-v="entry">经济</button>
+            <button data-v="mid">主流</button>
+            <button data-v="high">高端</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>远心策略</label>
+          <div class="seg" data-key="tele">
+            <button data-v="auto" class="on">自动</button>
+            <button data-v="prefer">优先</button>
+            <button data-v="only">仅远心</button>
+            <button data-v="off">排除</button>
+          </div>
+          <p class="hint">测量场景下自动模式会将远心镜头置顶；普通 FA 镜头存在透视误差。</p>
+        </div>
+
+        <div class="field">
+          <label>使用光圈 <span class="unit">F 值 / 影响景深</span></label>
+          <input type="number" id="in-fnum" value="4" min="1.4" max="22" step="0.5" inputmode="decimal">
+          <p class="hint">景深按实际使用光圈估算；缩小光圈可增景深，但需提高照度并注意衍射极限。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <span class="step-no">4</span>
+        <h2>光源选型</h2>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label>被测物类型</label>
+          <select id="in-light-scene">
+            <option value="metal-scratch">金属件 · 划痕/压伤</option>
+            <option value="curve-reflect">曲面反光件</option>
+            <option value="print-label">印刷标签</option>
+            <option value="glass-transparent">透明玻璃</option>
+            <option value="general">通用漫反射件</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>检测目标</label>
+          <select id="in-light-target">
+            <option value="defect">表面缺陷（划痕/压伤/脏污）</option>
+            <option value="dimension">轮廓/尺寸测量</option>
+            <option value="appearance">颜色/外观/字符</option>
+            <option value="presence">有无/定位</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>表面反光程度</label>
+          <div class="seg" data-key="lightReflect">
+            <button data-v="low">哑光</button>
+            <button data-v="mid" class="on">中等</button>
+            <button data-v="high">镜面</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="chk"><input type="checkbox" id="in-light-color">需要真实颜色还原（色差/印刷检测）</label>
+        </div>
+        <div class="field">
+          <label class="chk"><input type="checkbox" id="in-light-back">物体背面可安装光源（透射布光）</label>
+        </div>
+        <p class="hint">光源建议按视野自动给出尺寸下限；运动检测时优先推荐支持频闪的型号。</p>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ══════════ 结果区 ══════════ -->
+  <div class="col-results">
+
+    <div class="metrics" id="out-metrics"></div>
+
+    <div class="sec-head">
+      <h2>推荐相机规格</h2>
+      <span class="count" id="out-cam-count"></span>
+    </div>
+    <div id="out-cams"></div>
+
+    <div class="sec-head">
+      <h2>匹配镜头</h2>
+      <span class="count" id="out-lens-count"></span>
+    </div>
+    <div id="out-lenses"></div>
+
+    <div class="sec-head">
+      <h2>光源推荐</h2>
+      <span class="count" id="out-light-count"></span>
+    </div>
+    <div id="out-lights"></div>
+
+    <div class="sec-head">
+      <h2>风险与校核</h2>
+    </div>
+    <div id="out-risks"></div>
+
+    <details class="detail">
+      <summary>计算过程明细</summary>
+      <div id="out-detail-body"></div>
+    </details>
+
+    <p class="disclaimer">
+      <b>数据说明：</b>相机、镜头与光源型号参数均为示例近似值，用于方案评估与方法演示。
+      定型前须以厂商最新规格书核实像圈、MOD、畸变、MTF 与光源显色指数，并通过样机实测确认景深、解析力与打光效果。
+      计算采用薄透镜近似（f = WD·β/(1+β)）与 3 像素准则；光源推荐基于场景规则的启发式评估，
+      实际成像受表面材质、环境光、安装空间与算法影响，须以打光实验最终确定。
+    </p>
+  </div>
+</div>
+
+<!-- ══════════ 底部条 ══════════ -->
+<div class="bottombar" id="bottombar">
+  <div class="sum"><b>—</b><span>计算中</span></div>
+  <button class="btn btn-sm" id="btn-print-bar">打印 / PDF</button>
+  <button class="btn btn-primary btn-sm" id="btn-summary-2">方案摘要</button>
+</div>
+
+<!-- ══════════ 摘要弹窗 ══════════ -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>方案摘要</h3>
+      <button class="x" id="modal-close" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body" id="modal-canvas-host"></div>
+    <div class="modal-foot">
+      <button class="btn" id="btn-print-modal">打印 / 存 PDF</button>
+      <button class="btn btn-primary" id="btn-download">保存为图片</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/lens-data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -14,7 +14,13 @@ const S = {
   manual: { w: 2448, h: 2048, px: 3.45, fmt: '2/3"', mount: 'C' },
   budget: 'any',
   teleMode: 'auto',
-  fnum: 4
+  fnum: 4,
+  /* 光源选型输入 */
+  lightScene: 'metal-scratch',
+  lightTarget: 'defect',
+  lightReflect: 'mid',
+  lightColorNeed: false,
+  lightBackOk: false
 };
 
 const $ = (id) => document.getElementById(id);
@@ -42,6 +48,10 @@ function syncFromDOM() {
   S.measure = $('in-measure').checked;
   S.moving = $('in-moving').checked;
   S.fnum = num('in-fnum', S.fnum);
+  S.lightScene = $('in-light-scene').value;
+  S.lightTarget = $('in-light-target').value;
+  S.lightColorNeed = $('in-light-color').checked;
+  S.lightBackOk = $('in-light-back').checked;
   if (S.camMode === 'manual') {
     S.manual.w = num('in-camw', 2448);
     S.manual.h = num('in-camh', 2048);
@@ -59,6 +69,13 @@ function compute() {
   const fovH = Math.max(S.fovH, 0.1);
   const tol = Math.max(S.tol, 0.0005);
   const wd = Math.max(S.wd, 5);
+
+  /* 0. 光源推荐（独立于相机，提前计算） */
+  const lightRec = LIGHT_ENGINE.recommend({
+    scene: S.lightScene, target: S.lightTarget, reflect: S.lightReflect,
+    colorNeed: S.lightColorNeed, backlightOk: S.lightBackOk,
+    moving: S.moving, budget: S.budget, fovW, fovH, wd
+  });
 
   /* 1. 正向推导相机需求 */
   const camRec = ENGINE.recommendCameras(fovW, fovH, tol, {
@@ -84,7 +101,7 @@ function compute() {
   }
 
   if (!cam) {
-    return { error: 'no-camera', need: camRec.need, camRec, fovW, fovH, tol, wd };
+    return { error: 'no-camera', need: camRec.need, camRec, fovW, fovH, tol, wd, lightRec };
   }
 
   /* 3. 目标倍率与焦距 */
@@ -173,7 +190,8 @@ function compute() {
     res, sysTol, tolRatio,
     dofBest: passed[0] ? passed[0].dof : 0,
     needTele, teleMode, perspErr,
-    need: camRec.need
+    need: camRec.need,
+    lightRec
   };
 }
 
@@ -184,6 +202,7 @@ function render() {
   const outLenses = $('out-lenses');
   const outCams = $('out-cams');
   const outMetrics = $('out-metrics');
+  const outLights = $('out-lights');
   const outRisks = $('out-risks');
   const outDetail = $('out-detail-body');
 
@@ -197,6 +216,7 @@ function render() {
         超出示例库最大档位。请降低精度要求、缩小视野，或采用多相机/扫描拼接方案。</div>
       </div>`;
     outLenses.innerHTML = `<div class="empty">无可用相机，无法匹配镜头。</div>`;
+    renderLights(R);
     outRisks.innerHTML = '';
     outDetail.innerHTML = '';
     updateBottom(null);
@@ -322,6 +342,9 @@ function render() {
     outLenses.innerHTML = R.shown.map((p, i) => lensCard(p, i)).join('');
   }
 
+  /* ── 光源推荐 ── */
+  renderLights(R);
+
   /* ── 风险提示 ── */
   outRisks.innerHTML = buildRisks(R);
 
@@ -419,6 +442,89 @@ function lensCard(p, i) {
       <p class="reason">${reasons.join('；')}。</p>
     </div>
   </article>`;
+}
+
+/* ---------------- 光源推荐渲染 ---------------- */
+function renderLights(R) {
+  const LR = R.lightRec;
+  const host = $('out-lights');
+  const cnt = $('out-light-count');
+  if (!LR) { host.innerHTML = ''; return; }
+
+  const scene = LR.scene;
+  cnt.textContent = `${LIGHT_ENGINE.formName[LR.lights[0]?.light.form] || '—'} 优先 · ${LR.lights.length} 款可选`;
+
+  /* 结论条：打光方式 + 布光说明 */
+  const head = `
+    <div class="light-brief">
+      <div class="light-brief-top">
+        <span class="badge">${scene.label}</span>
+        <span class="badge gray">检测目标：${LR.target.label}</span>
+        <span class="badge green">${LR.primaryMethod}</span>
+      </div>
+      <p>${scene.guide}</p>
+      <div class="light-tips">
+        <div><span class="tip-k">安装要点</span><span class="tip-v">${scene.install}</span></div>
+        <div><span class="tip-k">颜色建议</span><span class="tip-v">${scene.colorTip}</span></div>
+      </div>
+    </div>`;
+
+  const cards = LR.lights.map((p, i) => {
+    const l = p.light;
+    const sc = p.score;
+    const colorBadge = l.color === '白'
+      ? `<span class="badge gray">白光${l.cri ? ' · CRI' + l.cri : ''}</span>`
+      : `<span class="badge amber">${l.color}光</span>`;
+    const sizeWarn = !p.sizeOk
+      ? `<span class="badge amber">建议 ≥${p.needSize}mm</span>`
+      : '';
+
+    const reasons = [];
+    reasons.push(`打光方式 <b>${LIGHT_METHOD_NAME[l.method]}</b>`);
+    reasons.push(`发光面建议 <b>≥${p.needSize}mm</b>（型号标称 ${l.size}mm）`);
+    if (l.angle) reasons.push(`照射角度 ${l.angle}`);
+    if (l.strobe) reasons.push('支持频闪');
+    if (l.color === '白' && l.cri) reasons.push(`显色指数 CRI ${l.cri}`);
+    const installWarn = p.installNotes.length
+      ? `<p class="reason warnline">${p.installNotes.join('；')}</p>` : '';
+
+    return `
+    <article class="light-card ${i === 0 ? 'top' : ''}">
+      <div class="light-ico" data-form="${l.form}">${lightGlyph(l.form)}</div>
+      <div class="light-body">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="model">${l.brand} ${l.model}</span>
+            <div class="brandline">
+              <span class="badge ${i === 0 ? '' : 'gray'}">${LIGHT_FORM_NAME[l.form]}</span>
+              ${colorBadge}
+              ${sizeWarn}
+              <span class="badge ${l.tier === 'entry' ? 'green' : l.tier === 'high' ? 'amber' : 'gray'}">${{ entry: '经济', mid: '主流', high: '高端' }[l.tier]}</span>
+            </div>
+          </div>
+          <div class="score-ring" style="--p:${sc}%"><span>${sc}</span></div>
+        </div>
+        <p class="reason">${reasons.join('；')}。<br><span class="note-dim">${l.note}</span></p>
+        ${installWarn}
+      </div>
+    </article>`;
+  }).join('');
+
+  host.innerHTML = head + `<div class="light-list">${cards}</div>`;
+}
+
+/* 光源类型示意符号（SVG 图形，避免依赖图标库） */
+function lightGlyph(form) {
+  const g = {
+    'ring-low': '<circle cx="16" cy="16" r="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="4 3"/><circle cx="16" cy="16" r="4" fill="none" stroke="currentColor" stroke-width="2"/>',
+    'ring-high': '<circle cx="16" cy="16" r="10" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="16" cy="16" r="4" fill="none" stroke="currentColor" stroke-width="2"/>',
+    'bar': '<rect x="5" y="12" width="22" height="8" rx="3" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M16 4v5M12 6l4 3 4-3" stroke="currentColor" stroke-width="1.8" fill="none"/>',
+    'coax': '<path d="M7 16h18M16 6v20" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="5" fill="none" stroke="currentColor" stroke-width="2"/>',
+    'dome': '<path d="M5 20a11 11 0 0 1 22 0" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M16 20v5" stroke="currentColor" stroke-width="2"/>',
+    'backlight': '<rect x="5" y="9" width="22" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M10 13h12M10 19h12" stroke="currentColor" stroke-width="1.6"/>',
+    'spot': '<path d="M13 5h6l6 20H7z" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="16" cy="9" r="2" fill="currentColor"/>'
+  };
+  return `<svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">${g[form] || g.spot}</svg>`;
 }
 
 /* 无匹配镜头时的原因诊断 */
@@ -544,6 +650,44 @@ function buildRisks(R) {
       `该相机为 ${R.cam.mount} 接口，内置示例镜头库以 C 口为主，需确认转接环或改用对应接口镜头系列。`]);
   }
 
+  /* 光源相关校核 */
+  if (R.lightRec) {
+    const LR = R.lightRec;
+    const top = LR.lights[0];
+    /* 背光场景但背面不可安装 */
+    if (LR.sceneKey === 'glass-transparent' && !S.lightBackOk) {
+      out.push(['warn', '透明件轮廓方案需透射布光',
+        `当前未勾选「背面可安装光源」，背光源方案被降权。透明玻璃测轮廓尺寸通常必须采用背光透射，
+         请确认机构是否留出背面空间；若无法实现，只能靠低角度暗场看表面，轮廓精度会下降。`]);
+    }
+    /* 镜面高反光但选了低角度直射作为首选 */
+    if (R.lightRec.reflect === 'high' && top && (top.light.form === 'ring-low' || top.light.form === 'bar')) {
+      out.push(['warn', '高反光件直射照明存在热点风险',
+        `镜面件首选光源为 <b>${LIGHT_FORM_NAME[top.light.form]}</b>，直射易形成局部过曝白斑。
+         建议改用场景说明中的穹顶漫射光或同轴光，或加装偏振片。`]);
+    }
+    /* 需颜色还原但首选非高显色白光 */
+    if (R.lightRec.colorNeed && top && top.light.color !== '白') {
+      out.push(['warn', '颜色还原需求与首选光源冲突',
+        `已勾选真实颜色还原，但当前综合首选为 <b>${top.light.color}光</b>（${LIGHT_FORM_NAME[top.light.form]}），
+         会造成色偏。色差/印刷检测请选白光 CRI≥90 型号，并固定色温与曝光。`]);
+    }
+    /* 尺寸覆盖不足 */
+    const undersized = LR.lights.filter(p => !p.sizeOk);
+    if (undersized.length) {
+      out.push(['info', '部分光源型号尺寸低于视野建议值',
+        `当前视野 ${fmt(R.fovW, 0)}×${fmt(R.fovH, 0)}mm 建议发光面 ≥${undersized[0].needSize}mm，
+         ${undersized.length} 款候选尺寸偏小，可能需要多灯拼接或更大规格，边缘照度需实测。`]);
+    }
+    /* 工作距离过短影响安装 */
+    const tight = LR.lights[0] && LR.lights[0].installNotes.length;
+    if (tight) {
+      out.push(['warn', '工作距离与光源安装空间冲突',
+        `WD ${fmt(R.wd, 0)}mm 下：${LR.lights[0].installNotes.join('；')}。
+         建议增大工作距离，或改用更紧凑的光源形态。`]);
+    }
+  }
+
   if (!out.length) {
     out.push(['ok', '关键约束均已通过',
       `像圈覆盖、接口匹配、分辨率余量、景深与焦距偏差均在合理区间。仍建议样机实测 MTF 与畸变。`]);
@@ -572,7 +716,11 @@ function buildDetail(R) {
     ['所需焦距 f（薄透镜）', `f = WD·β/(1+β) = ${fmt(R.wd, 0)}×${fmt(R.mReq, 4)}/(1+${fmt(R.mReq, 4)}) = <b>${fmt(R.fTarget, 2)} mm</b>`],
     ['景深估算依据', `DOF ≈ 2·F·c·(1+β)/β²，F=${S.fnum}，c=2×像素尺寸，β 取最佳方案实际值`],
     ['远心判定', R.needTele ? '需要（存在高度差或高倍率测量）' : '非必需',],
-    ['候选镜头总数', `${LENSES.length} 款，通过硬性约束 ${R.passed.length} 款`]
+    ['候选镜头总数', `${LENSES.length} 款，通过硬性约束 ${R.passed.length} 款`],
+    ['— 光源场景 / 目标', `${R.lightRec.scene.label} / ${R.lightRec.target.label}`],
+    ['— 推荐打光方式', R.lightRec.primaryMethod],
+    ['— 光源尺寸下限', `发光面 ≥ ${R.lightRec.lights[0] ? R.lightRec.lights[0].needSize : '—'} mm（按视野 ${fmt(R.fovW, 0)}×${fmt(R.fovH, 0)} 反推）`],
+    ['— 光源评分权重', '打光方式 32% · 光源类型 32% · 反光适配 14% · 颜色 12% · 频闪 10% · 预算 8%']
   ];
   return `<table class="calc-table">${rows.map(([k, v]) =>
     `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</table>`;
@@ -585,9 +733,10 @@ function updateBottom(R) {
     return;
   }
   const best = R.passed[0];
+  const topLight = R.lightRec && R.lightRec.lights[0];
   box.querySelector('.sum').innerHTML = best
     ? `<b>${best.lens.type === 'tele' ? best.lens.mag + '×' : best.lens.f + 'mm'}</b>
-       <span>${best.lens.brand} ${best.lens.model} · 匹配 ${R.passed.length} 款镜头</span>`
+       <span>${best.lens.brand} ${best.lens.model} · ${R.passed.length} 款镜头${topLight ? ' · 光源 ' + LIGHT_FORM_NAME[topLight.light.form] : ''}</span>`
     : `<b>无匹配</b><span>需调整视野、精度或工作距离</span>`;
 }
 
@@ -617,6 +766,8 @@ function bindSegs() {
         S.budget = btn.dataset.v;
       } else if (key === 'tele') {
         S.teleMode = btn.dataset.v;
+      } else if (key === 'lightReflect') {
+        S.lightReflect = btn.dataset.v;
       }
       render();
     });
@@ -630,11 +781,11 @@ function bindInputs() {
     const el = $(id);
     if (el) el.addEventListener('input', render);
   });
-  ['in-measure', 'in-moving'].forEach(id => {
+  ['in-measure', 'in-moving', 'in-light-color', 'in-light-back'].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener('change', render);
   });
-  ['in-camfmt', 'in-cammount'].forEach(id => {
+  ['in-camfmt', 'in-cammount', 'in-light-scene', 'in-light-target'].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener('change', render);
   });
@@ -678,11 +829,15 @@ function buildSummaryCanvas(R) {
   if (S.moving && R.cam && R.cam.shutter === '卷帘') risks.push('卷帘快门 + 运动被测物存在拖影风险，建议改全局快门');
   if (best && best.dof < S.heightDiff) risks.push(`景深 ${fmt(best.dof, 2)}mm 小于高度差 ${fmt(S.heightDiff, 2)}mm，需缩小光圈或改远心`);
   if (R.needTele) risks.push('测量场景存在高度差，优先选用远心镜头以消除透视误差');
+  const LR = R.lightRec;
+  const topLight = LR && LR.lights[0];
+  if (LR && LR.sceneKey === 'glass-transparent' && !S.lightBackOk) risks.push('透明件轮廓建议采用背光透射，请确认背面安装空间');
+  if (LR && LR.reflect === 'high' && topLight && (topLight.light.form === 'ring-low' || topLight.light.form === 'bar')) risks.push('高反光件直射照明有热点风险，建议穹顶漫射或同轴光');
   if (!risks.length) risks.push('关键约束通过，建议样机实测 MTF、畸变与边缘照度');
 
-  /* 高度预估 */
+  /* 高度预估：新增光源区块 */
   const riskLines = risks.slice(0, 4).map(t => wrap('· ' + t, W - PAD * 2 - 8).length);
-  const H = 300 + 260 + 250 + (alt ? 190 : 0) +
+  const H = 300 + 260 + 250 + (alt ? 190 : 0) + 240 +
             riskLines.reduce((a, b) => a + b * 32, 0) + 120;
 
   cv.width = W;
@@ -705,7 +860,7 @@ function buildSummaryCanvas(R) {
   ctx.fillStyle = INK;
   ctx.font = F(700, 46);
   ctx.textAlign = 'left';
-  ctx.fillText('镜头选型方案', PAD, y);
+  ctx.fillText('工业视觉选型方案', PAD, y);
 
   ctx.font = F(400, 20);
   ctx.fillStyle = MUTED;
@@ -813,6 +968,35 @@ function buildSummaryCanvas(R) {
     y += 42;
   }
 
+  /* 光源方案 */
+  if (LR && topLight) {
+    ctx.strokeStyle = LINE;
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+    y += 42;
+
+    ctx.font = F(600, 20);
+    ctx.fillStyle = ACCENT;
+    ctx.fillText('推荐光源 · ' + LR.scene.label, PAD, y);
+    y += 34;
+
+    ctx.font = MONO(700, 30);
+    ctx.fillStyle = INK;
+    const lightTitle = `${topLight.light.brand} ${topLight.light.model}`;
+    ctx.fillText(lightTitle, PAD, y);
+    y += 34;
+
+    ctx.font = F(400, 20);
+    ctx.fillStyle = INK2;
+    const lightSpec = `${LIGHT_FORM_NAME[topLight.light.form]} · ${LIGHT_METHOD_NAME[topLight.light.method]} · ${topLight.light.color}光${topLight.light.cri ? ' CRI' + topLight.light.cri : ''} · 发光面 ≥${topLight.needSize}mm${topLight.light.strobe ? ' · 支持频闪' : ''}`;
+    ctx.fillText(lightSpec, PAD, y);
+    y += 30;
+
+    ctx.font = F(400, 20);
+    ctx.fillStyle = MUTED;
+    ctx.fillText('打光方式：' + LR.primaryMethod, PAD, y);
+    y += 38;
+  }
+
   /* 风险 */
   ctx.strokeStyle = LINE;
   ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
@@ -841,7 +1025,7 @@ function buildSummaryCanvas(R) {
 
   ctx.font = F(400, 17);
   ctx.fillStyle = '#8b9fac';
-  const foot = wrap('本方案由选型工具依据薄透镜近似与 3 像素准则自动生成，镜头与相机参数为示例近似值，仅供方案评估。定型前请以厂商最新规格书与样机实测结果为准。', W - PAD * 2);
+  const foot = wrap('本方案由选型工具依据薄透镜近似、3 像素准则与光源场景规则自动生成，相机、镜头与光源参数均为示例近似值，仅供方案评估。定型前请以厂商最新规格书与样机实测结果为准。', W - PAD * 2);
   foot.forEach(ln => { ctx.fillText(ln, PAD, y); y += 25; });
 
   /* 裁剪到实际高度 */
@@ -871,7 +1055,7 @@ function downloadSummary() {
   const a = document.createElement('a');
   const d = new Date();
   const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-  a.download = `镜头选型方案_${stamp}.png`;
+  a.download = `工业视觉选型方案_${stamp}.png`;
   a.href = cv.toDataURL('image/png');
   a.click();
 }
@@ -883,7 +1067,7 @@ function printSummary() {
   const w = window.open('', '_blank');
   if (!w) { window.print(); return; }
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-    <title>镜头选型方案</title>
+    <title>工业视觉选型方案</title>
     <style>@page{size:A4;margin:10mm}html,body{margin:0;padding:0}
     img{width:100%;display:block}</style></head>
     <body><img src="${cv.toDataURL('image/png')}"></body></html>`);
@@ -919,3 +1103,4 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+

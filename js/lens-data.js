@@ -408,3 +408,281 @@ const ENGINE = {
   }
 };
 
+/* ============================================================
+   光源库与选型引擎
+   所有型号参数为示例近似值，量产项目须以厂商最新规格书复核
+   ============================================================ */
+
+/* ---------- 光源类型 / 打光方式名称 ---------- */
+const LIGHT_FORM_NAME = {
+  'ring-low': '低角度环形光',
+  'ring-high': '高角度环形光',
+  'bar': '条形光',
+  'coax': '同轴光',
+  'dome': '穹顶漫射光',
+  'backlight': '背光源',
+  'spot': '点光/聚光'
+};
+const LIGHT_METHOD_NAME = {
+  dark: '暗场',
+  bright: '明场',
+  back: '背光透射',
+  diffuse: '漫射'
+};
+
+/* ---------- 光源型号库 ----------
+   form   : 光源类型
+   method : 典型打光方式
+   size   : 发光面尺寸 mm（环形=外径，条形=长度，背光=发光边长，穹顶=直径，同轴=窗口，点光=照射直径）
+   color  : 常规出光色
+   cri    : 显色指数（单色光为 null）
+   strobe : 是否支持频闪
+   angle  : 可选照射角度
+------------------------------------------------------- */
+const LIGHTS = [
+  /* ── 低角度环形光 · 暗场 · 突出表面凹凸 ── */
+  { brand:'CCS', series:'LFX', model:'LFX-100SW', form:'ring-low', method:'dark', size:100, color:'白', cri:90, strobe:true,  angle:'15°/30°/45°', tier:'mid',   note:'低角度斜射，划痕处散射成亮线' },
+  { brand:'CCS', series:'LFX2', model:'LFX2-132SW', form:'ring-low', method:'dark', size:132, color:'白', cri:90, strobe:true, angle:'15°/30°', tier:'mid',   note:'大口径高均匀低角度环形光' },
+  { brand:'奥普特', series:'OPT-LI', model:'OPT-LI15630-W', form:'ring-low', method:'dark', size:156, color:'白', cri:85, strobe:true, angle:'30°', tier:'entry', note:'经济型低角度环形光' },
+  { brand:'奥普特', series:'OPT-LI', model:'OPT-LI9024-W', form:'ring-low', method:'dark', size:90, color:'白', cri:85, strobe:true, angle:'24°', tier:'entry', note:'紧凑型低角度环形光' },
+  { brand:'奥普特', series:'OPT-LI', model:'OPT-LI15630-R', form:'ring-low', method:'dark', size:156, color:'红', cri:null, strobe:true, angle:'30°', tier:'entry', note:'红光增强深色金属划痕对比' },
+  { brand:'Moritex', series:'MLA', model:'MLA-100D', form:'ring-low', method:'dark', size:100, color:'白', cri:92, strobe:false, angle:'18°/35°', tier:'high', note:'高均匀低角度漫射环光' },
+
+  /* ── 高角度环形光 · 明场 · 均匀正面照明 ── */
+  { brand:'CCS', series:'LFR', model:'LFR-100SW', form:'ring-high', method:'bright', size:100, color:'白', cri:92, strobe:true, angle:'70°', tier:'mid', note:'高角度均匀明场，颜色还原好' },
+  { brand:'奥普特', series:'OPT-RI', model:'OPT-RI12090-W', form:'ring-high', method:'bright', size:120, color:'白', cri:90, strobe:true, angle:'90°', tier:'entry', note:'经济型高角度环形光' },
+  { brand:'康视达', series:'KSD-RING', model:'KSD-RING90', form:'ring-high', method:'bright', size:90, color:'白', cri:88, strobe:false, angle:'60°', tier:'entry', note:'通用明场环形光' },
+
+  /* ── 条形光 · 方向性照明 / 多角度组合 ── */
+  { brand:'CCS', series:'LFB', model:'LFB-150SW', form:'bar', method:'bright', size:150, color:'白', cri:90, strobe:true, angle:'45°', tier:'mid', note:'通用条形光，可多角度组合' },
+  { brand:'奥普特', series:'OPT-LB', model:'OPT-LB15030-W', form:'bar', method:'bright', size:150, color:'白', cri:88, strobe:true, angle:'30°', tier:'entry', note:'经济型条形光' },
+  { brand:'奥普特', series:'OPT-LB', model:'OPT-LB200-W', form:'bar', method:'bright', size:200, color:'白', cri:88, strobe:true, angle:'45°', tier:'entry', note:'长条形光，适合大视野' },
+  { brand:'奥普特', series:'OPT-LB', model:'OPT-LB15030-B', form:'bar', method:'dark', size:150, color:'蓝', cri:null, strobe:true, angle:'30°', tier:'entry', note:'蓝光提升玻璃表面散射对比' },
+  { brand:'Moritex', series:'MLB', model:'MLB-150', form:'bar', method:'bright', size:150, color:'白', cri:93, strobe:false, angle:'可调', tier:'high', note:'高均匀条形光' },
+
+  /* ── 同轴光 · 镜面反射 / 无阴影 ── */
+  { brand:'CCS', series:'LFV', model:'LFV-100SW', form:'coax', method:'bright', size:100, color:'白', cri:90, strobe:true, angle:'同轴', tier:'mid', note:'分光同轴，适合镜面与平面件' },
+  { brand:'奥普特', series:'OPT-CO', model:'OPT-CO5050-W', form:'coax', method:'bright', size:50, color:'白', cri:92, strobe:false, angle:'同轴', tier:'high', note:'小视场高均匀同轴光' },
+  { brand:'Moritex', series:'MCE', model:'MCE-100', form:'coax', method:'bright', size:100, color:'白', cri:93, strobe:false, angle:'同轴', tier:'high', note:'大口径同轴漫射光' },
+
+  /* ── 穹顶漫射光 · 曲面均匀 / 消除热点 ── */
+  { brand:'CCS', series:'LFD', model:'LFD-200SW', form:'dome', method:'diffuse', size:200, color:'白', cri:93, strobe:false, angle:'全向漫射', tier:'high', note:'半球漫射，消除曲面反光热点' },
+  { brand:'奥普特', series:'OPT-DM', model:'OPT-DM200-W', form:'dome', method:'diffuse', size:200, color:'白', cri:92, strobe:false, angle:'全向漫射', tier:'high', note:'大尺寸穹顶漫射光' },
+  { brand:'奥普特', series:'OPT-DM', model:'OPT-DM120-W', form:'dome', method:'diffuse', size:120, color:'白', cri:90, strobe:false, angle:'全向漫射', tier:'mid', note:'紧凑型穹顶漫射光' },
+
+  /* ── 背光源 · 轮廓 / 透射 ── */
+  { brand:'CCS', series:'LBM', model:'LBM-150SW', form:'backlight', method:'back', size:150, color:'白', cri:90, strobe:true, angle:'透射', tier:'mid', note:'高均匀背光，轮廓成像' },
+  { brand:'奥普特', series:'OPT-BL', model:'OPT-BL150150-W', form:'backlight', method:'back', size:150, color:'白', cri:88, strobe:true, angle:'透射', tier:'entry', note:'经济型方形背光源' },
+  { brand:'奥普特', series:'OPT-BL', model:'OPT-BL200200-W', form:'backlight', method:'back', size:200, color:'白', cri:88, strobe:true, angle:'透射', tier:'mid', note:'大面背光，适合大视野轮廓' },
+  { brand:'康视达', series:'KSD-BL', model:'KSD-BL120', form:'backlight', method:'back', size:120, color:'白', cri:86, strobe:false, angle:'透射', tier:'entry', note:'通用背光源' },
+
+  /* ── 点光 / 聚光 · 远距离局部照明 ── */
+  { brand:'CCS', series:'LSP', model:'LSP-100SW', form:'spot', method:'bright', size:100, color:'白', cri:90, strobe:true, angle:'聚光', tier:'mid', note:'聚光照明，适合远距离局部' },
+  { brand:'奥普特', series:'OPT-SP', model:'OPT-SP100-W', form:'spot', method:'bright', size:100, color:'白', cri:88, strobe:true, angle:'聚光', tier:'mid', note:'可调焦聚光光源' }
+];
+
+/* ---------- 场景规则矩阵 ----------
+   methods : 打光方式基础分（0~100）
+   forms   : 光源类型基础分（0~100）
+   primary/guide/install/colorTip : 面向用户的结论与布光说明
+------------------------------------------------------- */
+const LIGHT_SCENES = {
+  'metal-scratch': {
+    label: '金属件 · 划痕压伤',
+    desc: '划痕、压伤为表面微观起伏，靠明暗对比显现',
+    methods: { dark: 100, bright: 58, diffuse: 62, back: 18 },
+    forms: { 'ring-low': 100, 'bar': 90, 'coax': 78, 'spot': 62, 'ring-high': 50, 'dome': 42, 'backlight': 12 },
+    primary: '暗场 · 低角度斜射',
+    guide: '低角度光斜射表面，平整处反射光偏离镜头形成暗背景，划痕/压伤处漫反射进入镜头呈亮线。划痕有方向性时，用 2~4 支条形光从不同角度交替照明。',
+    install: '环形光内径须大于镜头外径；低角度暗场需一定工作距离（建议 WD ≥ 80mm）。高反光金属优先选带漫射或偏振款以抑制热点。',
+    colorTip: '通用选白光；深色金属可选红光增强划痕对比。'
+  },
+  'curve-reflect': {
+    label: '曲面反光件',
+    desc: '镜面曲面产生局部强反光热点，需均匀漫射打光',
+    methods: { diffuse: 100, bright: 70, dark: 40, back: 20 },
+    forms: { 'dome': 100, 'coax': 82, 'ring-high': 75, 'bar': 55, 'ring-low': 40, 'spot': 35, 'backlight': 15 },
+    primary: '漫射 · 穹顶均匀照明',
+    guide: '穹顶光将光线多次漫射后从各方向均匀入射，消除镜面热点，还原曲面轮廓与颜色。局部残存高光可用偏振片或同轴光压制。',
+    install: '穹顶光需罩住被测物，占用较大安装空间（WD 通常 ≥ 150mm）；镜头前端与物体间须预留光源罩位置。',
+    colorTip: '需颜色还原时选高显色白光（CRI ≥ 90）。'
+  },
+  'print-label': {
+    label: '印刷标签',
+    desc: '文字、条码、颜色印刷，需均匀明场照明与真实颜色还原',
+    methods: { bright: 100, diffuse: 82, dark: 45, back: 25 },
+    forms: { 'ring-high': 100, 'bar': 88, 'coax': 80, 'dome': 72, 'ring-low': 45, 'spot': 40, 'backlight': 18 },
+    primary: '明场 · 高角度均匀照明',
+    guide: '高角度环形光或对称双条形光提供均匀正面照明，保证字符与颜色一致。覆膜标签反光时改用同轴光或漫射光。',
+    install: '光源尽量靠近镜头同轴安装以减少阴影；条形光对称布置于视野两侧，角度 30°~45°。',
+    colorTip: '颜色/色差检测必须选高显色白光（CRI ≥ 90，色温 5000~6500K）；条码读取可用单色光。'
+  },
+  'glass-transparent': {
+    label: '透明玻璃',
+    desc: '透光件正面光穿透，需背光勾轮廓、暗场看表面',
+    methods: { back: 100, dark: 85, bright: 35, diffuse: 45 },
+    forms: { 'backlight': 100, 'bar': 80, 'ring-low': 72, 'coax': 40, 'ring-high': 35, 'spot': 42, 'dome': 30 },
+    primary: '背光透射 + 低角度暗场',
+    guide: '测轮廓尺寸用背光源透射成像，边缘呈暗线、背景明亮；查表面划痕/脏污改用低角度暗场，缺陷处散射光进入镜头。两种方法常需切换。',
+    install: '背光源须安装在玻璃背面并与相机光轴对齐，物体两侧都要留出安装空间；背光发光面应大于视野 10% 以上。',
+    colorTip: '轮廓检测选白光或红光（CMOS 响应高）；表面脏污可选蓝光提升散射对比。'
+  },
+  'general': {
+    label: '通用漫反射件',
+    desc: '一般哑光表面，均匀明场照明即可',
+    methods: { bright: 100, diffuse: 80, dark: 55, back: 35 },
+    forms: { 'ring-high': 95, 'bar': 88, 'dome': 82, 'ring-low': 70, 'coax': 60, 'backlight': 45, 'spot': 50 },
+    primary: '明场 · 均匀照明',
+    guide: '高角度环形光或条形光提供均匀正面照明，适合颜色、字符与一般外观检测。',
+    install: '光源对称布置，避免单侧阴影；发光面覆盖视野并留 20% 余量。',
+    colorTip: '通用选高显色白光。'
+  }
+};
+
+/* ---------- 检测目标修饰 ---------- */
+const LIGHT_TARGETS = {
+  'defect':     { label: '表面缺陷（划痕/压伤/脏污）', methodFactor: { dark: 1.15, bright: 0.90 }, formFactor: { 'ring-low': 1.15, 'bar': 1.10, 'coax': 0.95 } },
+  'dimension':  { label: '轮廓/尺寸测量',              methodFactor: { back: 1.20, dark: 1.05 }, formFactor: { 'backlight': 1.20, 'coax': 1.05, 'bar': 1.05 } },
+  'appearance': { label: '颜色/外观/字符',             methodFactor: { bright: 1.15, diffuse: 1.05 }, formFactor: { 'ring-high': 1.15, 'dome': 1.10, 'coax': 1.05 } },
+  'presence':   { label: '有无/定位',                  methodFactor: { bright: 1.05, back: 1.10 }, formFactor: { 'backlight': 1.10, 'ring-high': 1.05, 'bar': 1.05 } }
+};
+
+/* ==========================================================
+   光源选型引擎
+   ========================================================== */
+const LIGHT_ENGINE = {
+  formName: LIGHT_FORM_NAME,
+  methodName: LIGHT_METHOD_NAME,
+  scenes: LIGHT_SCENES,
+  targets: LIGHT_TARGETS,
+
+  /* 按视野反推所需光源发光尺寸（mm），向上取整到 10mm */
+  sizeAdvice(form, fovW, fovH) {
+    const d = Math.hypot(fovW, fovH);
+    const m = Math.max(fovW, fovH);
+    let k = 1.2;
+    if (form === 'backlight') k = 1.15;
+    else if (form === 'dome') k = 1.30;
+    else if (form === 'bar') k = 1.25;
+    else if (form === 'ring-low' || form === 'ring-high') k = 1.10;
+    else if (form === 'coax') k = 1.00;
+    const base = (form === 'dome' || form === 'coax' || form === 'ring-low' || form === 'ring-high') ? d : m;
+    return Math.ceil(base * k / 10) * 10;
+  },
+
+  recommend(ctx) {
+    const scene = LIGHT_SCENES[ctx.scene] || LIGHT_SCENES.general;
+    const target = LIGHT_TARGETS[ctx.target] || LIGHT_TARGETS.defect;
+    const reflect = ctx.reflect || 'mid';
+    const colorNeed = !!ctx.colorNeed;
+    const moving = !!ctx.moving;
+    const budget = ctx.budget || 'any';
+    const fovW = Math.max(ctx.fovW || 10, 1);
+    const fovH = Math.max(ctx.fovH || 10, 1);
+    const wd = Math.max(ctx.wd || 100, 1);
+
+    const tierScores = {
+      entry: { entry: 100, mid: 75, high: 45 },
+      mid:   { entry: 80,  mid: 100, high: 70 },
+      high:  { entry: 70,  mid: 85,  high: 100 },
+      any:   { entry: 92,  mid: 96,  high: 92 }
+    };
+
+    const out = [];
+    for (const light of LIGHTS) {
+      const parts = {};
+
+      /* 打光方式 32% */
+      const methodScore = (scene.methods[light.method] || 10) * (target.methodFactor[light.method] || 1);
+      parts['打光方式'] = Math.round(Math.min(100, methodScore));
+
+      /* 光源类型 32% */
+      const formScore = (scene.forms[light.form] || 10) * (target.formFactor[light.form] || 1);
+      parts['光源类型'] = Math.round(Math.min(100, formScore));
+
+      /* 反光适配 14% */
+      let reflectScore;
+      if (reflect === 'high') {
+        reflectScore = ({ dome: 100, coax: 95, 'ring-high': 80, spot: 70, bar: 55, 'ring-low': 40, backlight: 50 })[light.form] || 70;
+      } else if (reflect === 'low') {
+        reflectScore = ({ 'ring-low': 100, bar: 95, 'ring-high': 90, dome: 75, coax: 70, spot: 70, backlight: 60 })[light.form] || 85;
+      } else {
+        reflectScore = 88;
+      }
+      parts['反光适配'] = Math.round(reflectScore);
+
+      /* 颜色还原 12%：需还原时显色指数是关键；否则单色光同样可用 */
+      parts['颜色适配'] = colorNeed
+        ? (light.cri >= 90 ? 100 : light.cri >= 80 ? 72 : 25)
+        : (light.color === '白' ? 95 : 100);
+
+      /* 频闪适配 10% */
+      parts['频闪适配'] = Math.round(moving ? (light.strobe ? 100 : 30) : (light.strobe ? 92 : 100));
+
+      let total = parts['打光方式'] * 0.32 + parts['光源类型'] * 0.32 +
+                  parts['反光适配'] * 0.14 + parts['颜色适配'] * 0.12 +
+                  parts['频闪适配'] * 0.10;
+
+      /* 预算 8% */
+      const tierScore = (tierScores[budget] || tierScores.any)[light.tier] || 90;
+      total = total * 0.92 + tierScore * 0.08;
+
+      /* 硬约束：尺寸覆盖不足则降权 */
+      const needSize = this.sizeAdvice(light.form, fovW, fovH);
+      const sizeOk = light.size >= needSize * 0.8;
+      if (!sizeOk) total *= 0.72;
+
+      /* 硬约束：安装空间 */
+      const installNotes = [];
+      let installPenalty = 0;
+      if ((light.form === 'ring-low' || light.form === 'ring-high') && wd < 60) {
+        installNotes.push('WD 过短，环形光安装空间不足'); installPenalty += 8;
+      }
+      if (light.form === 'dome' && wd < 120) {
+        installNotes.push('WD 过短，穹顶光罩难以容纳'); installPenalty += 12;
+      }
+      if (light.form === 'coax' && wd < 50) {
+        installNotes.push('WD 过短，分光镜安装困难'); installPenalty += 6;
+      }
+      if (light.form === 'backlight' && ctx.backlightOk === false) {
+        installNotes.push('物体背面无安装空间，背光方案不可行'); installPenalty += 30;
+      }
+      total -= installPenalty;
+
+      /* 需颜色还原但显色指数偏低：额外降权 */
+      if (colorNeed && light.cri != null && light.cri < 80) total *= 0.85;
+
+      total = Math.max(0, Math.min(100, total));
+      out.push({ light, score: Math.round(total), parts, needSize, sizeOk, installNotes });
+    }
+
+    out.sort((a, b) => b.score - a.score);
+
+    /* 按光源类型去重：每类最多 2 款，保证方案覆盖不同打光方式 */
+    const byForm = {};
+    const dedup = [];
+    for (const p of out) {
+      const k = p.light.form;
+      if ((byForm[k] || 0) < 2) { byForm[k] = (byForm[k] || 0) + 1; dedup.push(p); }
+      if (dedup.length >= 6) break;
+    }
+    if (dedup.length < 5) {
+      for (const p of out) {
+        if (dedup.indexOf(p) < 0) dedup.push(p);
+        if (dedup.length >= 6) break;
+      }
+    }
+
+    return {
+      scene, target, sceneKey: ctx.scene, targetKey: ctx.target,
+      reflect, colorNeed, moving,
+      primaryMethod: scene.primary,
+      guide: scene.guide, install: scene.install, colorTip: scene.colorTip,
+      wd, fovW, fovH,
+      lights: dedup,
+      all: out
+    };
+  }
+};
+
+
