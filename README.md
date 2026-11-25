@@ -129,13 +129,17 @@ node test/engine.test.js
 
 ## 型号库
 
-- **相机**：9 档真实传感器规格（Sony IMX264 / IMX178 / IMX304 / IMX183 等）
-- **镜头**：44 款示例型号
-  - Computar MP2 / MPW2、Kowa LM-HC / LM-JC、VST VS-H1、长步道 LS-8M、Moritex ML-MC、MML-HR 物方远心
-- **光源**：26 款示例型号
-  - CCS LFX / LFX2 / LFR / LFB / LFV / LFD / LBM / LSP
-  - 奥普特 OPT-LI / RI / LB / CO / DM / BL / SP
-  - Moritex MLA / MLB / MCE、康视达 KSD 系列
+全部为**市面在售的真实品牌型号**，以 CST 康视达为主、海康威视 / 奥普特 / 长步道等国内主流为辅。参数依厂商公开规格书录入，定型前仍须复核。
+
+- **相机**（11 款，带 `brand` + `model`，推荐卡直接显示可采购型号）
+  - CST 康视达 `CST-CG` / `CST-CR` 系列（CG050-75UM、CG030-36GM、CR200-6GM 等）
+  - 海康威视 HIKROBOT `MV-CS` 系列（MV-CS050-10GM / 10UM、MV-CS023-10GM）
+- **镜头**（40 款）
+  - CST 康视达 `CST-B` 系列 FA 定焦（B-5M / B-10M）、`CST-MF` 物方远心
+  - 海康威视 `MVL-HF` 系列、长步道 `LS-8M`、奥普特 `OPT-FA`
+- **光源**（28 款）
+  - CST 康视达 `RS` 环形 / `2BS` 条形 / `COS`·`HCOS` 同轴 / `DS` 圆顶 / `HFS` 面光 / `SPL` 点光 / `HRS` 环形无影
+  - 奥普特 `OPT-LI` / `RI` / `LB` / `CO` / `DM` / `BL` / `SP`
 
 ### 接入自有型号库
 
@@ -150,7 +154,7 @@ node test/engine.test.js
 
 ## 免责说明
 
-型号参数为**示例近似值**，用于方案评估与方法演示。定型前须：
+所列型号为市面在售真实产品，参数依厂商公开规格书录入，仅供方案评估。定型前须：
 
 1. 以厂商最新规格书核实像圈、MOD、畸变、MTF 与光源显色指数
 2. 通过样机实测确认景深、解析力与打光效果

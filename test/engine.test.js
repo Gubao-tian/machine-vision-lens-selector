@@ -17,6 +17,26 @@ function assert(cond, msg) {
 function section(name) { console.log('\n=== ' + name + ' ==='); }
 
 /* ============================================================
+   第零部分：真实品牌型号数据完整性
+   ============================================================ */
+section('型号库 · 真实品牌与覆盖');
+assert(CAMERAS.length >= 9, `相机型号数 ${CAMERAS.length} ≥ 9`);
+CAMERAS.forEach(c => {
+  assert(!!c.brand && !!c.model, `${c.id} 有品牌与型号`);
+  assert(/^[A-Za-z0-9\-]+$/.test(c.model), `${c.model} 型号格式合法`);
+});
+LENSES.forEach(l => assert(/^[A-Za-z0-9\-]+$/.test(l.model), `${l.model} 镜头型号格式合法`));
+LIGHTS.forEach(l => assert(/^[A-Za-z0-9\-]+$/.test(l.model), `${l.model} 光源型号格式合法`));
+const camBrands = new Set(CAMERAS.map(c => c.brand));
+const lensBrands = new Set(LENSES.map(l => l.brand));
+const lightBrands = new Set(LIGHTS.map(l => l.brand));
+assert(camBrands.has('CST康视达'), '相机库含 CST康视达');
+assert(lensBrands.has('CST康视达'), '镜头库含 CST康视达');
+assert(lightBrands.has('CST康视达'), '光源库含 CST康视达');
+assert(camBrands.has('海康威视'), '相机库含海康威视');
+assert(lensBrands.has('海康威视') && lensBrands.has('长步道'), '镜头库含海康威视与长步道');
+
+/* ============================================================
    第一部分：相机 / 镜头引擎场景（打印明细供人工核对）
    ============================================================ */
 function scenario(name, fovW, fovH, tol, wd, heightDiff, measure) {

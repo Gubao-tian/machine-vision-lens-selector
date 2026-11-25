@@ -1070,10 +1070,10 @@ details.detail[open] > summary::after { content: "－"; }
     </details>
 
     <p class="disclaimer">
-      <b>数据说明：</b>相机、镜头与光源型号参数均为示例近似值，用于方案评估与方法演示。
-      定型前须以厂商最新规格书核实像圈、MOD、畸变、MTF 与光源显色指数，并通过样机实测确认景深、解析力与打光效果。
-      计算采用薄透镜近似（f = WD·β/(1+β)）与 3 像素准则；光源推荐基于场景规则的启发式评估，
-      实际成像受表面材质、环境光、安装空间与算法影响，须以打光实验最终确定。
+      <b>数据说明：</b>相机、镜头与光源均为市面在售的真实品牌型号（CST 康视达、海康威视、奥普特、长步道等），
+      参数依据厂商公开规格书录入，仅用于方案评估。定型前仍须以厂商最新规格书核实像圈、MOD、畸变、MTF 与光源显色指数，
+      并通过样机实测确认景深、解析力与打光效果。计算采用薄透镜近似（f = WD·β/(1+β)）与 3 像素准则；
+      光源推荐基于场景规则的启发式评估，实际成像受表面材质、环境光、安装空间与算法影响，须以打光实验最终确定。
     </p>
   </div>
 </div>
@@ -1109,7 +1109,9 @@ details.detail[open] > summary::after { content: "－"; }
 /* ---------- 传感器格式：标称像圈直径 (mm) ---------- */
 const FORMAT_CIRCLE = {
   '1/3"':   6.0,
+  '1/2.9"': 6.2,
   '1/2.8"': 6.5,
+  '1/2.5"': 7.0,
   '1/2"':   8.0,
   '1/1.8"': 9.0,
   '1/1.2"': 13.4,
@@ -1133,19 +1135,21 @@ const CAMERA_PRESETS = [
 ];
 
 /* ---------- 相机库 ----------
-   以传感器规格为档位，sensor 列真实传感器型号供核查；
-   iface 为常见工业数据接口，shutter 影响运动被测物选型
+   brand/model 为市面在售的真实相机型号（CST康视达、海康威视 HIKROBOT 等）；
+   sensor 为传感器型号供核查；参数依据厂商公开规格书，定型前请复核
 ------------------------------------------------------- */
 const CAMERAS = [
-  { id:'cam-13',  mp:1.3,  w:1280, h:960,  px:3.75, fmt:'1/3"',   mount:'C', shutter:'全局', iface:'GigE',  sensor:'Sony ICX445', tier:'entry' },
-  { id:'cam-2',   mp:2.1,  w:1920, h:1080, px:2.9,  fmt:'1/2.8"', mount:'C', shutter:'卷帘', iface:'USB3',  sensor:'Sony IMX290', tier:'entry' },
-  { id:'cam-2b',  mp:2.4,  w:1936, h:1216, px:5.86, fmt:'1/1.2"', mount:'C', shutter:'全局', iface:'GigE',  sensor:'Sony IMX174', tier:'mid' },
-  { id:'cam-3',   mp:3.2,  w:2048, h:1536, px:3.45, fmt:'1/1.8"', mount:'C', shutter:'全局', iface:'GigE',  sensor:'Sony IMX265', tier:'mid' },
-  { id:'cam-5',   mp:5.1,  w:2448, h:2048, px:3.45, fmt:'2/3"',   mount:'C', shutter:'全局', iface:'GigE',  sensor:'Sony IMX264', tier:'mid' },
-  { id:'cam-6',   mp:6.3,  w:3096, h:2078, px:2.4,  fmt:'1/1.8"', mount:'C', shutter:'卷帘', iface:'USB3',  sensor:'Sony IMX178', tier:'mid' },
-  { id:'cam-12',  mp:12.3, w:4024, h:3036, px:3.45, fmt:'1.1"',   mount:'C', shutter:'全局', iface:'10GigE', sensor:'Sony IMX304', tier:'high' },
-  { id:'cam-12b', mp:12.0, w:4000, h:3000, px:1.85, fmt:'1/1.7"', mount:'C', shutter:'卷帘', iface:'USB3',  sensor:'Sony IMX226', tier:'high' },
-  { id:'cam-20',  mp:20.0, w:5472, h:3648, px:2.4,  fmt:'1"',     mount:'C', shutter:'卷帘', iface:'USB3',  sensor:'Sony IMX183', tier:'high' }
+  { id:'cam-13',  brand:'CST康视达', model:'CST-CG013-80GM',  mp:1.3,  w:1280, h:1024, px:4.8,  fmt:'1/2"',    mount:'C', shutter:'全局', iface:'GigE',  sensor:'CMOS',       tier:'entry' },
+  { id:'cam-2',   brand:'CST康视达', model:'CST-CR050-23GM',  mp:5.0,  w:2592, h:1944, px:2.2,  fmt:'1/2.5"',  mount:'C', shutter:'卷帘', iface:'GigE',  sensor:'AR0521',     tier:'entry' },
+  { id:'cam-2b',  brand:'海康威视',   model:'MV-CS023-10GM',   mp:2.3,  w:1920, h:1200, px:5.86, fmt:'1/1.2"',  mount:'C', shutter:'全局', iface:'GigE',  sensor:'IMX249',     tier:'mid' },
+  { id:'cam-3',   brand:'CST康视达', model:'CST-CG030-36GM',  mp:3.1,  w:2048, h:1536, px:3.45, fmt:'1/1.8"',  mount:'C', shutter:'全局', iface:'GigE',  sensor:'IMX265',     tier:'mid' },
+  { id:'cam-5',   brand:'海康威视',   model:'MV-CS050-10GM',   mp:5.1,  w:2448, h:2048, px:3.45, fmt:'2/3"',    mount:'C', shutter:'全局', iface:'GigE',  sensor:'Sony IMX264', tier:'mid' },
+  { id:'cam-5b',  brand:'CST康视达', model:'CST-CG050-75UM',  mp:5.1,  w:2448, h:2048, px:3.45, fmt:'2/3"',    mount:'C', shutter:'全局', iface:'USB3',  sensor:'IMX250',     tier:'mid' },
+  { id:'cam-6',   brand:'CST康视达', model:'CST-CR060-18GM',  mp:6.3,  w:3072, h:2048, px:2.4,  fmt:'1/1.8"',  mount:'C', shutter:'卷帘', iface:'GigE',  sensor:'CMOS',       tier:'mid' },
+  { id:'cam-8',   brand:'海康威视',   model:'MV-CS050-10UM',   mp:5.1,  w:2448, h:2048, px:3.45, fmt:'2/3"',    mount:'C', shutter:'全局', iface:'USB3',  sensor:'Sony IMX264', tier:'high' },
+  { id:'cam-12',  brand:'CST康视达', model:'CST-CG123-31UMD', mp:12.3, w:4096, h:3000, px:3.45, fmt:'1.1"',    mount:'C', shutter:'全局', iface:'USB3',  sensor:'CMOS',       tier:'high' },
+  { id:'cam-12b', brand:'CST康视达', model:'CST-CR120-9GM',   mp:12.0, w:4000, h:3000, px:1.85, fmt:'1/1.7"',  mount:'C', shutter:'卷帘', iface:'GigE',  sensor:'IMX226',     tier:'high' },
+  { id:'cam-20',  brand:'CST康视达', model:'CST-CR200-6GM',   mp:20.0, w:5472, h:3648, px:2.4,  fmt:'1"',      mount:'C', shutter:'卷帘', iface:'GigE',  sensor:'IMX183',     tier:'high' }
 ];
 
 /* ---------- 镜头库 ----------
@@ -1162,44 +1166,29 @@ const CAMERAS = [
    tier   : 价格档位 entry / mid / high
 ------------------------------------------------------- */
 const LENSES = [
-  /* ── Computar MP2 系列 · FA 定焦 · 2/3" · 5MP ── */
-  { brand:'Computar', series:'MP2', model:'M0824-MP2', f:8,  fn:2.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'mid', type:'fa' },
-  { brand:'Computar', series:'MP2', model:'M1224-MP2', f:12, fn:2.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'mid', type:'fa' },
-  { brand:'Computar', series:'MP2', model:'M1620-MP2', f:16, fn:2.0, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'mid', type:'fa' },
-  { brand:'Computar', series:'MP2', model:'M2520-MP2', f:25, fn:2.0, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'mid', type:'fa' },
-  { brand:'Computar', series:'MP2', model:'M3520-MP2', f:35, fn:2.0, ic:11, fmt:'2/3"', mount:'C', mod:0.15, mp:5, dist:'低', tier:'mid', type:'fa' },
-  { brand:'Computar', series:'MP2', model:'M5028-MP2', f:50, fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:0.20, mp:5, dist:'低', tier:'mid', type:'fa' },
+  /* ── CST康视达 B系列 FA定焦 · 2/3" · 5MP（真实型号 CST-B0814-5M 等）── */
+  { brand:'CST康视达', series:'B-5M', model:'CST-B0814-5M', f:8,  fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'mid', type:'fa' },
+  { brand:'CST康视达', series:'B-5M', model:'CST-B1214-5M', f:12, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'mid', type:'fa' },
+  { brand:'CST康视达', series:'B-5M', model:'CST-B1614-5M', f:16, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'mid', type:'fa' },
+  { brand:'CST康视达', series:'B-5M', model:'CST-B2514-5M', f:25, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.15, mp:5, dist:'低', tier:'mid', type:'fa' },
+  { brand:'CST康视达', series:'B-5M', model:'CST-B3514-5M', f:35, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.20, mp:5, dist:'低', tier:'mid', type:'fa' },
+  { brand:'CST康视达', series:'B-5M', model:'CST-B5014-5M', f:50, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.30, mp:5, dist:'低', tier:'mid', type:'fa' },
 
-  /* ── Computar MPW2 系列 · FA 定焦 · 1/1.8" · 10MP ── */
-  { brand:'Computar', series:'MPW2', model:'M0824-MPW2', f:8,  fn:2.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.10, mp:10, dist:'低', tier:'mid', type:'fa' },
-  { brand:'Computar', series:'MPW2', model:'M1224-MPW2', f:12, fn:2.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.10, mp:10, dist:'低', tier:'mid', type:'fa' },
-  { brand:'Computar', series:'MPW2', model:'M1620-MPW2', f:16, fn:2.0, ic:9, fmt:'1/1.8"', mount:'C', mod:0.10, mp:10, dist:'低', tier:'mid', type:'fa' },
-  { brand:'Computar', series:'MPW2', model:'M2520-MPW2', f:25, fn:2.0, ic:9, fmt:'1/1.8"', mount:'C', mod:0.10, mp:10, dist:'低', tier:'mid', type:'fa' },
-  { brand:'Computar', series:'MPW2', model:'M3520-MPW2', f:35, fn:2.0, ic:9, fmt:'1/1.8"', mount:'C', mod:0.15, mp:10, dist:'低', tier:'mid', type:'fa' },
-  { brand:'Computar', series:'MPW2', model:'M5028-MPW2', f:50, fn:2.8, ic:9, fmt:'1/1.8"', mount:'C', mod:0.20, mp:10, dist:'低', tier:'mid', type:'fa' },
+  /* ── CST康视达 B系列 FA定焦 · 2/3" · 千万像素 ── */
+  { brand:'CST康视达', series:'B-10M', model:'CST-B0814-10M', f:8,  fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:10, dist:'极低', tier:'high', type:'fa' },
+  { brand:'CST康视达', series:'B-10M', model:'CST-B1214-10M', f:12, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:10, dist:'极低', tier:'high', type:'fa' },
+  { brand:'CST康视达', series:'B-10M', model:'CST-B1614-10M', f:16, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:10, dist:'极低', tier:'high', type:'fa' },
+  { brand:'CST康视达', series:'B-10M', model:'CST-B2514-10M', f:25, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.15, mp:10, dist:'极低', tier:'high', type:'fa' },
+  { brand:'CST康视达', series:'B-10M', model:'CST-B3514-10M', f:35, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.20, mp:10, dist:'极低', tier:'high', type:'fa' },
+  { brand:'CST康视达', series:'B-10M', model:'CST-B5014-10M', f:50, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.30, mp:10, dist:'极低', tier:'high', type:'fa' },
 
-  /* ── Kowa LM-HC 系列 · FA 定焦 · 2/3" · 5MP · 大光圈 ── */
-  { brand:'Kowa', series:'LM-HC', model:'LM8HC',  f:8,  fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'high', type:'fa' },
-  { brand:'Kowa', series:'LM-HC', model:'LM12HC', f:12, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'high', type:'fa' },
-  { brand:'Kowa', series:'LM-HC', model:'LM16HC', f:16, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'high', type:'fa' },
-  { brand:'Kowa', series:'LM-HC', model:'LM25HC', f:25, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.15, mp:5, dist:'低', tier:'high', type:'fa' },
-  { brand:'Kowa', series:'LM-HC', model:'LM35HC', f:35, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.20, mp:5, dist:'低', tier:'high', type:'fa' },
-  { brand:'Kowa', series:'LM-HC', model:'LM50HC', f:50, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.30, mp:5, dist:'低', tier:'high', type:'fa' },
-
-  /* ── Kowa LM-JC 系列 · FA 定焦 · 1" · 10MP ── */
-  { brand:'Kowa', series:'LM-JC', model:'LM12JC', f:12, fn:1.8, ic:16, fmt:'1"', mount:'C', mod:0.15, mp:10, dist:'低', tier:'high', type:'fa' },
-  { brand:'Kowa', series:'LM-JC', model:'LM16JC', f:16, fn:1.8, ic:16, fmt:'1"', mount:'C', mod:0.20, mp:10, dist:'低', tier:'high', type:'fa' },
-  { brand:'Kowa', series:'LM-JC', model:'LM25JC', f:25, fn:1.8, ic:16, fmt:'1"', mount:'C', mod:0.25, mp:10, dist:'低', tier:'high', type:'fa' },
-  { brand:'Kowa', series:'LM-JC', model:'LM35JC', f:35, fn:1.8, ic:16, fmt:'1"', mount:'C', mod:0.30, mp:10, dist:'低', tier:'high', type:'fa' },
-  { brand:'Kowa', series:'LM-JC', model:'LM50JC', f:50, fn:1.8, ic:16, fmt:'1"', mount:'C', mod:0.40, mp:10, dist:'低', tier:'high', type:'fa' },
-
-  /* ── VST VS-H1 系列 · FA 定焦 · 1/1.8" · 5MP ── */
-  { brand:'VST', series:'VS-H1', model:'VS-0814H1', f:8,  fn:1.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'mid', type:'fa' },
-  { brand:'VST', series:'VS-H1', model:'VS-1214H1', f:12, fn:1.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'mid', type:'fa' },
-  { brand:'VST', series:'VS-H1', model:'VS-1614H1', f:16, fn:1.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'mid', type:'fa' },
-  { brand:'VST', series:'VS-H1', model:'VS-2514H1', f:25, fn:1.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.15, mp:5, dist:'低', tier:'mid', type:'fa' },
-  { brand:'VST', series:'VS-H1', model:'VS-3514H1', f:35, fn:1.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.20, mp:5, dist:'低', tier:'mid', type:'fa' },
-  { brand:'VST', series:'VS-H1', model:'VS-5018H1', f:50, fn:1.8, ic:9, fmt:'1/1.8"', mount:'C', mod:0.25, mp:5, dist:'低', tier:'mid', type:'fa' },
+  /* ── 海康威视 HIKROBOT FA定焦 · 2/3" · 5MP ── */
+  { brand:'海康威视', series:'MVL-HF', model:'MVL-HF0824M-6MP', f:8,  fn:2.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:6, dist:'低', tier:'mid', type:'fa' },
+  { brand:'海康威视', series:'MVL-HF', model:'MVL-HF1224M-6MP', f:12, fn:2.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:6, dist:'低', tier:'mid', type:'fa' },
+  { brand:'海康威视', series:'MVL-HF', model:'MVL-HF1624M-6MP', f:16, fn:2.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:6, dist:'低', tier:'mid', type:'fa' },
+  { brand:'海康威视', series:'MVL-HF', model:'MVL-HF2524M-6MP', f:25, fn:2.4, ic:11, fmt:'2/3"', mount:'C', mod:0.15, mp:6, dist:'低', tier:'mid', type:'fa' },
+  { brand:'海康威视', series:'MVL-HF', model:'MVL-HF3524M-6MP', f:35, fn:2.4, ic:11, fmt:'2/3"', mount:'C', mod:0.20, mp:6, dist:'低', tier:'mid', type:'fa' },
+  { brand:'海康威视', series:'MVL-HF', model:'MVL-HF5024M-6MP', f:50, fn:2.4, ic:11, fmt:'2/3"', mount:'C', mod:0.30, mp:6, dist:'低', tier:'mid', type:'fa' },
 
   /* ── 长步道 Chiopt LS-8M 系列 · FA 定焦 · 2/3" · 8MP ── */
   { brand:'长步道', series:'LS-8M', model:'LS-8M08', f:8,  fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:8, dist:'低', tier:'entry', type:'fa' },
@@ -1209,19 +1198,20 @@ const LENSES = [
   { brand:'长步道', series:'LS-8M', model:'LS-8M35', f:35, fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:0.20, mp:8, dist:'低', tier:'entry', type:'fa' },
   { brand:'长步道', series:'LS-8M', model:'LS-8M50', f:50, fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:0.30, mp:8, dist:'低', tier:'entry', type:'fa' },
 
-  /* ── Moritex ML-MC 系列 · FA 定焦 · 2/3" · 5MP ── */
-  { brand:'Moritex', series:'ML-MC', model:'ML-MC08HR', f:8,  fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'high', type:'fa' },
-  { brand:'Moritex', series:'ML-MC', model:'ML-MC12HR', f:12, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'high', type:'fa' },
-  { brand:'Moritex', series:'ML-MC', model:'ML-MC16HR', f:16, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'high', type:'fa' },
-  { brand:'Moritex', series:'ML-MC', model:'ML-MC25HR', f:25, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.15, mp:5, dist:'低', tier:'high', type:'fa' },
-  { brand:'Moritex', series:'ML-MC', model:'ML-MC35HR', f:35, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.20, mp:5, dist:'低', tier:'high', type:'fa' },
-  { brand:'Moritex', series:'ML-MC', model:'ML-MC50HR', f:50, fn:2.0, ic:11, fmt:'2/3"', mount:'C', mod:0.30, mp:5, dist:'低', tier:'high', type:'fa' },
+  /* ── 奥普特 OPT FA定焦 · 1/1.8" · 5MP ── */
+  { brand:'奥普特', series:'OPT-FA', model:'OPT-FA0824-5M', f:8,  fn:2.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'entry', type:'fa' },
+  { brand:'奥普特', series:'OPT-FA', model:'OPT-FA1224-5M', f:12, fn:2.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'entry', type:'fa' },
+  { brand:'奥普特', series:'OPT-FA', model:'OPT-FA1624-5M', f:16, fn:2.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.10, mp:5, dist:'低', tier:'entry', type:'fa' },
+  { brand:'奥普特', series:'OPT-FA', model:'OPT-FA2524-5M', f:25, fn:2.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.15, mp:5, dist:'低', tier:'entry', type:'fa' },
+  { brand:'奥普特', series:'OPT-FA', model:'OPT-FA3524-5M', f:35, fn:2.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.20, mp:5, dist:'低', tier:'entry', type:'fa' },
+  { brand:'奥普特', series:'OPT-FA', model:'OPT-FA5024-5M', f:50, fn:2.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.30, mp:5, dist:'低', tier:'entry', type:'fa' },
 
-  /* ── Moritex MML-HR 系列 · 物方远心 · 2/3" ──
+  /* ── CST康视达 物方远心 · 2/3"（真实型号 CST-MF 系列）──
      远心工作距离固定，不可调；匹配依据为固定放大倍率 */
-  { brand:'Moritex', series:'MML-HR', model:'MML1-HR-65D', f:null, mag:1.0, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:65,  dof:0.60, mp:5, dist:'极低', tier:'high', type:'tele' },
-  { brand:'Moritex', series:'MML-HR', model:'MML2-HR-110D', f:null, mag:2.0, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:110, dof:0.32, mp:5, dist:'极低', tier:'high', type:'tele' },
-  { brand:'Moritex', series:'MML-HR', model:'MML4-HR-65D', f:null, mag:4.0, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:65,  dof:0.10, mp:5, dist:'极低', tier:'high', type:'tele' }
+  { brand:'CST康视达', series:'MF远心', model:'CST-MF005F90H-D45', f:null, mag:0.5, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:90,  dof:1.20, mp:5, dist:'极低', tier:'high', type:'tele' },
+  { brand:'CST康视达', series:'MF远心', model:'CST-MF01F40H-D45',  f:null, mag:1.0, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:65,  dof:0.60, mp:5, dist:'极低', tier:'high', type:'tele' },
+  { brand:'CST康视达', series:'MF远心', model:'CST-MF01F60H-D66',  f:null, mag:2.0, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:110, dof:0.32, mp:5, dist:'极低', tier:'high', type:'tele' },
+  { brand:'CST康视达', series:'MF远心', model:'CST-MF03F80H-D58',  f:null, mag:4.0, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:65,  dof:0.10, mp:5, dist:'极低', tier:'high', type:'tele' }
 ];
 
 /* ============================================================
@@ -1544,43 +1534,46 @@ const LIGHT_METHOD_NAME = {
 ------------------------------------------------------- */
 const LIGHTS = [
   /* ── 低角度环形光 · 暗场 · 突出表面凹凸 ── */
-  { brand:'CCS', series:'LFX', model:'LFX-100SW', form:'ring-low', method:'dark', size:100, color:'白', cri:90, strobe:true,  angle:'15°/30°/45°', tier:'mid',   note:'低角度斜射，划痕处散射成亮线' },
-  { brand:'CCS', series:'LFX2', model:'LFX2-132SW', form:'ring-low', method:'dark', size:132, color:'白', cri:90, strobe:true, angle:'15°/30°', tier:'mid',   note:'大口径高均匀低角度环形光' },
+  { brand:'CST康视达', series:'RS', model:'CST-RS15090-W', form:'ring-low', method:'dark', size:150, color:'白', cri:90, strobe:true,  angle:'低角度', tier:'mid',   note:'低角度斜射，划痕处散射成亮线' },
+  { brand:'CST康视达', series:'RS', model:'CST-RS12070-W', form:'ring-low', method:'dark', size:120, color:'白', cri:90, strobe:true, angle:'低角度', tier:'mid',   note:'中口径低角度环形光' },
+  { brand:'CST康视达', series:'RS', model:'CST-RS9070-W', form:'ring-low', method:'dark', size:90, color:'白', cri:88, strobe:true, angle:'低角度', tier:'entry', note:'紧凑型低角度环光' },
+  { brand:'CST康视达', series:'RS', model:'CST-RS9030-R', form:'ring-low', method:'dark', size:90, color:'红', cri:null, strobe:true, angle:'低角度', tier:'entry', note:'红光增强深色金属划痕对比' },
   { brand:'奥普特', series:'OPT-LI', model:'OPT-LI15630-W', form:'ring-low', method:'dark', size:156, color:'白', cri:85, strobe:true, angle:'30°', tier:'entry', note:'经济型低角度环形光' },
   { brand:'奥普特', series:'OPT-LI', model:'OPT-LI9024-W', form:'ring-low', method:'dark', size:90, color:'白', cri:85, strobe:true, angle:'24°', tier:'entry', note:'紧凑型低角度环形光' },
-  { brand:'奥普特', series:'OPT-LI', model:'OPT-LI15630-R', form:'ring-low', method:'dark', size:156, color:'红', cri:null, strobe:true, angle:'30°', tier:'entry', note:'红光增强深色金属划痕对比' },
-  { brand:'Moritex', series:'MLA', model:'MLA-100D', form:'ring-low', method:'dark', size:100, color:'白', cri:92, strobe:false, angle:'18°/35°', tier:'high', note:'高均匀低角度漫射环光' },
 
   /* ── 高角度环形光 · 明场 · 均匀正面照明 ── */
-  { brand:'CCS', series:'LFR', model:'LFR-100SW', form:'ring-high', method:'bright', size:100, color:'白', cri:92, strobe:true, angle:'70°', tier:'mid', note:'高角度均匀明场，颜色还原好' },
+  { brand:'CST康视达', series:'RS', model:'CST-RS10090-W', form:'ring-high', method:'bright', size:100, color:'白', cri:92, strobe:true, angle:'高角度', tier:'mid', note:'高角度均匀明场，颜色还原好' },
+  { brand:'CST康视达', series:'HRS', model:'CST-HRS90-W', form:'ring-high', method:'bright', size:90, color:'白', cri:90, strobe:true, angle:'高角度', tier:'mid', note:'环形无影光，均匀正面照明' },
+  { brand:'CST康视达', series:'HRS', model:'CST-HRS166-W', form:'ring-high', method:'bright', size:166, color:'白', cri:90, strobe:true, angle:'高角度', tier:'mid', note:'大口径环形无影光' },
   { brand:'奥普特', series:'OPT-RI', model:'OPT-RI12090-W', form:'ring-high', method:'bright', size:120, color:'白', cri:90, strobe:true, angle:'90°', tier:'entry', note:'经济型高角度环形光' },
-  { brand:'康视达', series:'KSD-RING', model:'KSD-RING90', form:'ring-high', method:'bright', size:90, color:'白', cri:88, strobe:false, angle:'60°', tier:'entry', note:'通用明场环形光' },
 
   /* ── 条形光 · 方向性照明 / 多角度组合 ── */
-  { brand:'CCS', series:'LFB', model:'LFB-150SW', form:'bar', method:'bright', size:150, color:'白', cri:90, strobe:true, angle:'45°', tier:'mid', note:'通用条形光，可多角度组合' },
+  { brand:'CST康视达', series:'2BS', model:'CST-2BS14728-W', form:'bar', method:'bright', size:147, color:'白', cri:90, strobe:true, angle:'可调', tier:'mid', note:'标准条形光，可多角度组合' },
+  { brand:'CST康视达', series:'2BS', model:'CST-2BS19238-W', form:'bar', method:'bright', size:192, color:'白', cri:90, strobe:true, angle:'可调', tier:'mid', note:'长条形光，适合大视野' },
+  { brand:'CST康视达', series:'2BS', model:'CST-2BS14728-R', form:'bar', method:'dark', size:147, color:'红', cri:null, strobe:true, angle:'低角度', tier:'mid', note:'红光低角度条形，突出表面起伏' },
+  { brand:'CST康视达', series:'2BS', model:'CST-2BS14728-B', form:'bar', method:'dark', size:147, color:'蓝', cri:null, strobe:true, angle:'低角度', tier:'mid', note:'蓝光提升玻璃表面散射对比' },
   { brand:'奥普特', series:'OPT-LB', model:'OPT-LB15030-W', form:'bar', method:'bright', size:150, color:'白', cri:88, strobe:true, angle:'30°', tier:'entry', note:'经济型条形光' },
   { brand:'奥普特', series:'OPT-LB', model:'OPT-LB200-W', form:'bar', method:'bright', size:200, color:'白', cri:88, strobe:true, angle:'45°', tier:'entry', note:'长条形光，适合大视野' },
-  { brand:'奥普特', series:'OPT-LB', model:'OPT-LB15030-B', form:'bar', method:'dark', size:150, color:'蓝', cri:null, strobe:true, angle:'30°', tier:'entry', note:'蓝光提升玻璃表面散射对比' },
-  { brand:'Moritex', series:'MLB', model:'MLB-150', form:'bar', method:'bright', size:150, color:'白', cri:93, strobe:false, angle:'可调', tier:'high', note:'高均匀条形光' },
 
   /* ── 同轴光 · 镜面反射 / 无阴影 ── */
-  { brand:'CCS', series:'LFV', model:'LFV-100SW', form:'coax', method:'bright', size:100, color:'白', cri:90, strobe:true, angle:'同轴', tier:'mid', note:'分光同轴，适合镜面与平面件' },
+  { brand:'CST康视达', series:'COS', model:'CST-COS50-W', form:'coax', method:'bright', size:50, color:'白', cri:92, strobe:false, angle:'同轴', tier:'high', note:'标准同轴光，适合镜面与平面件' },
+  { brand:'CST康视达', series:'HCOS', model:'CST-HCOS100100-W', form:'coax', method:'bright', size:100, color:'白', cri:92, strobe:true, angle:'同轴', tier:'high', note:'高亮同轴光，大口径高均匀' },
   { brand:'奥普特', series:'OPT-CO', model:'OPT-CO5050-W', form:'coax', method:'bright', size:50, color:'白', cri:92, strobe:false, angle:'同轴', tier:'high', note:'小视场高均匀同轴光' },
-  { brand:'Moritex', series:'MCE', model:'MCE-100', form:'coax', method:'bright', size:100, color:'白', cri:93, strobe:false, angle:'同轴', tier:'high', note:'大口径同轴漫射光' },
 
   /* ── 穹顶漫射光 · 曲面均匀 / 消除热点 ── */
-  { brand:'CCS', series:'LFD', model:'LFD-200SW', form:'dome', method:'diffuse', size:200, color:'白', cri:93, strobe:false, angle:'全向漫射', tier:'high', note:'半球漫射，消除曲面反光热点' },
+  { brand:'CST康视达', series:'DS', model:'CST-DS175-W', form:'dome', method:'diffuse', size:175, color:'白', cri:93, strobe:false, angle:'全向漫射', tier:'high', note:'圆顶漫射光，消除曲面反光热点' },
+  { brand:'CST康视达', series:'DS', model:'CST-DS116-W', form:'dome', method:'diffuse', size:116, color:'白', cri:92, strobe:false, angle:'全向漫射', tier:'mid', note:'紧凑型圆顶漫射光' },
   { brand:'奥普特', series:'OPT-DM', model:'OPT-DM200-W', form:'dome', method:'diffuse', size:200, color:'白', cri:92, strobe:false, angle:'全向漫射', tier:'high', note:'大尺寸穹顶漫射光' },
   { brand:'奥普特', series:'OPT-DM', model:'OPT-DM120-W', form:'dome', method:'diffuse', size:120, color:'白', cri:90, strobe:false, angle:'全向漫射', tier:'mid', note:'紧凑型穹顶漫射光' },
 
   /* ── 背光源 · 轮廓 / 透射 ── */
-  { brand:'CCS', series:'LBM', model:'LBM-150SW', form:'backlight', method:'back', size:150, color:'白', cri:90, strobe:true, angle:'透射', tier:'mid', note:'高均匀背光，轮廓成像' },
+  { brand:'CST康视达', series:'HFS', model:'CST-HFS120120-W', form:'backlight', method:'back', size:120, color:'白', cri:90, strobe:true, angle:'透射', tier:'mid', note:'标准底部面光源，高均匀背光' },
+  { brand:'CST康视达', series:'HFS', model:'CST-HFS200200-W', form:'backlight', method:'back', size:200, color:'白', cri:90, strobe:true, angle:'透射', tier:'mid', note:'大面背光，适合大视野轮廓' },
   { brand:'奥普特', series:'OPT-BL', model:'OPT-BL150150-W', form:'backlight', method:'back', size:150, color:'白', cri:88, strobe:true, angle:'透射', tier:'entry', note:'经济型方形背光源' },
   { brand:'奥普特', series:'OPT-BL', model:'OPT-BL200200-W', form:'backlight', method:'back', size:200, color:'白', cri:88, strobe:true, angle:'透射', tier:'mid', note:'大面背光，适合大视野轮廓' },
-  { brand:'康视达', series:'KSD-BL', model:'KSD-BL120', form:'backlight', method:'back', size:120, color:'白', cri:86, strobe:false, angle:'透射', tier:'entry', note:'通用背光源' },
 
   /* ── 点光 / 聚光 · 远距离局部照明 ── */
-  { brand:'CCS', series:'LSP', model:'LSP-100SW', form:'spot', method:'bright', size:100, color:'白', cri:90, strobe:true, angle:'聚光', tier:'mid', note:'聚光照明，适合远距离局部' },
+  { brand:'CST康视达', series:'SPL', model:'CST-SPL96-W', form:'spot', method:'bright', size:96, color:'白', cri:90, strobe:true, angle:'聚光', tier:'mid', note:'点光源，适合远距离局部照明' },
   { brand:'奥普特', series:'OPT-SP', model:'OPT-SP100-W', form:'spot', method:'bright', size:100, color:'白', cri:88, strobe:true, angle:'聚光', tier:'mid', note:'可调焦聚光光源' }
 ];
 
@@ -2076,10 +2069,10 @@ function render() {
         <div class="card-body">
           <div class="card-head">
             <div class="card-title">
-              <span class="model">${fmt(c.cam.mp, 1)}MP · ${c.cam.fmt} · ${c.cam.w}×${c.cam.h}</span>
+              <span class="model">${c.cam.brand} ${c.cam.model}</span>
               <div class="brandline">
-                <span class="badge">${c.cam.sensor}</span>
-                <span class="badge gray">${c.cam.px}µm</span>
+                <span class="badge">${fmt(c.cam.mp, 1)}MP · ${c.cam.fmt} · ${c.cam.w}×${c.cam.h}</span>
+                <span class="badge gray">${c.cam.px}µm · ${c.cam.sensor}</span>
                 <span class="badge ${c.cam.shutter === '全局' ? 'green' : 'amber'}">${c.cam.shutter}快门</span>
                 <span class="badge gray">${c.cam.iface}</span>
                 <span class="badge gray">${c.cam.mount} 口</span>
@@ -2740,9 +2733,12 @@ function buildSummaryCanvas(R) {
   ctx.fillText('推荐相机规格', PAD, y);
   y += 34;
 
-  ctx.font = MONO(700, 34);
+  const camBrandModel = (R.activeCamEntry && R.activeCamEntry.cam.brand)
+    ? `${R.activeCamEntry.cam.brand} ${R.activeCamEntry.cam.model}`
+    : `${fmt(R.cam.mp, 1)}MP  ·  ${R.cam.fmt}  ·  ${R.cam.pxW}×${R.cam.pxH}`;
+  ctx.font = MONO(700, 30);
   ctx.fillStyle = INK;
-  ctx.fillText(`${fmt(R.cam.mp, 1)}MP  ·  ${R.cam.fmt}  ·  ${R.cam.pxW}×${R.cam.pxH}`, PAD, y);
+  ctx.fillText(camBrandModel, PAD, y);
   y += 34;
 
   ctx.font = F(400, 21);
@@ -2851,7 +2847,7 @@ function buildSummaryCanvas(R) {
 
   ctx.font = F(400, 17);
   ctx.fillStyle = '#8b9fac';
-  const foot = wrap('本方案由选型工具依据薄透镜近似、3 像素准则与光源场景规则自动生成，相机、镜头与光源参数均为示例近似值，仅供方案评估。定型前请以厂商最新规格书与样机实测结果为准。', W - PAD * 2);
+  const foot = wrap('本方案由选型工具依据薄透镜近似、3 像素准则与光源场景规则自动生成。所列型号为市面在售真实产品，参数依厂商公开规格书录入，仅供方案评估；定型前请以最新规格书与样机实测结果为准。', W - PAD * 2);
   foot.forEach(ln => { ctx.fillText(ln, PAD, y); y += 25; });
 
   /* 裁剪到实际高度 */

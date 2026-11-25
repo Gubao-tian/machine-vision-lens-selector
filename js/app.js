@@ -282,10 +282,10 @@ function render() {
         <div class="card-body">
           <div class="card-head">
             <div class="card-title">
-              <span class="model">${fmt(c.cam.mp, 1)}MP · ${c.cam.fmt} · ${c.cam.w}×${c.cam.h}</span>
+              <span class="model">${c.cam.brand} ${c.cam.model}</span>
               <div class="brandline">
-                <span class="badge">${c.cam.sensor}</span>
-                <span class="badge gray">${c.cam.px}µm</span>
+                <span class="badge">${fmt(c.cam.mp, 1)}MP · ${c.cam.fmt} · ${c.cam.w}×${c.cam.h}</span>
+                <span class="badge gray">${c.cam.px}µm · ${c.cam.sensor}</span>
                 <span class="badge ${c.cam.shutter === '全局' ? 'green' : 'amber'}">${c.cam.shutter}快门</span>
                 <span class="badge gray">${c.cam.iface}</span>
                 <span class="badge gray">${c.cam.mount} 口</span>
@@ -946,9 +946,12 @@ function buildSummaryCanvas(R) {
   ctx.fillText('推荐相机规格', PAD, y);
   y += 34;
 
-  ctx.font = MONO(700, 34);
+  const camBrandModel = (R.activeCamEntry && R.activeCamEntry.cam.brand)
+    ? `${R.activeCamEntry.cam.brand} ${R.activeCamEntry.cam.model}`
+    : `${fmt(R.cam.mp, 1)}MP  ·  ${R.cam.fmt}  ·  ${R.cam.pxW}×${R.cam.pxH}`;
+  ctx.font = MONO(700, 30);
   ctx.fillStyle = INK;
-  ctx.fillText(`${fmt(R.cam.mp, 1)}MP  ·  ${R.cam.fmt}  ·  ${R.cam.pxW}×${R.cam.pxH}`, PAD, y);
+  ctx.fillText(camBrandModel, PAD, y);
   y += 34;
 
   ctx.font = F(400, 21);
@@ -1057,7 +1060,7 @@ function buildSummaryCanvas(R) {
 
   ctx.font = F(400, 17);
   ctx.fillStyle = '#8b9fac';
-  const foot = wrap('本方案由选型工具依据薄透镜近似、3 像素准则与光源场景规则自动生成，相机、镜头与光源参数均为示例近似值，仅供方案评估。定型前请以厂商最新规格书与样机实测结果为准。', W - PAD * 2);
+  const foot = wrap('本方案由选型工具依据薄透镜近似、3 像素准则与光源场景规则自动生成。所列型号为市面在售真实产品，参数依厂商公开规格书录入，仅供方案评估；定型前请以最新规格书与样机实测结果为准。', W - PAD * 2);
   foot.forEach(ln => { ctx.fillText(ln, PAD, y); y += 25; });
 
   /* 裁剪到实际高度 */
