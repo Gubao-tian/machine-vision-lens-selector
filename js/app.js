@@ -199,6 +199,11 @@ function compute() {
   const sysTol = res.minFeature3;
   const tolRatio = sysTol / tol;
 
+  /* 零结果补救：所需焦距超出库内最长焦距时，反推可用的工作距离 */
+  const wdSuggest = passed.length
+    ? null
+    : ENGINE.suggestWD({ fTarget, targetM: mReq, wd });
+
   return {
     fovW, fovH, tol, wd, cam, camRec, activeCamEntry,
     target, mReq, fTarget,
@@ -207,7 +212,7 @@ function compute() {
     dofBest: passed[0] ? passed[0].dof : 0,
     needTele, teleMode, perspErr,
     need: camRec.need,
-    lightRec
+    lightRec, wdSuggest
   };
 }
 
@@ -350,6 +355,21 @@ function render() {
   /* ── 镜头推荐 ── */
   if (!R.passed.length) {
     const diag = analyzeFailure(R.failed, R);
+    const ws = R.wdSuggest;
+    const rescueHtml = ws && ws.overRange && ws.suggestions.length
+      ? `<div class="notice ok rescue"><span class="ico">✓</span>
+          <div><b>可落地的补救方案</b><br>${ws.message}
+          <div class="rescue-acts">
+            ${ws.suggestions.map((s, i) => `
+              <button type="button" class="btn-apply-wd" data-wd="${s.wd}"
+                title="点击后自动填入工作距离并重新计算">
+                应用 WD ${s.wd}mm · ${s.lens.model}
+              </button>`).join('')}
+          </div></div>
+        </div>`
+      : ws && ws.overRange
+        ? `<div class="notice warn"><span class="ico">!</span><div>${ws.message}</div></div>`
+        : '';
     outLenses.innerHTML = `
       <div class="notice bad"><span class="ico">!</span>
         <div><b>当前条件下没有匹配的镜头</b><br>
@@ -357,6 +377,7 @@ function render() {
         ${LENSES.length} 款候选全部被硬性约束排除。
         ${R.teleMode === 'only' ? '可先尝试放开「仅远心」限制。' : ''}</div>
       </div>` +
+      rescueHtml +
       diag.map(([cls, title, body]) => `
         <div class="notice ${cls}"><span class="ico">${cls === 'info' ? 'i' : '!'}</span>
           <div><b>${title}</b><br>${body}</div></div>`).join('');
@@ -375,6 +396,7 @@ function render() {
 
   updateBottom(R);
   bindCamPick();
+  bindWdApply();
 }
 
 function camReason(c) {
@@ -769,6 +791,19 @@ function bindCamPick() {
       S.camId = el.dataset.cam;
       render();
       switchTab('lens');   // 选完相机直接看匹配镜头，省一次点击
+    });
+  });
+}
+
+function bindWdApply() {
+  document.querySelectorAll('[data-wd]').forEach(el => {
+    el.addEventListener('click', () => {
+      const input = $('in-wd');
+      if (!input) return;
+      input.value = el.dataset.wd;
+      S.wd = Number(el.dataset.wd);
+      render();
+      switchTab('lens');
     });
   });
 }

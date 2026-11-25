@@ -103,6 +103,16 @@ const LENSES = [
   { brand:'奥普特', series:'OPT-FA', model:'OPT-FA3524-5M', f:35, fn:2.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.20, mp:5, dist:'低', tier:'entry', type:'fa' },
   { brand:'奥普特', series:'OPT-FA', model:'OPT-FA5024-5M', f:50, fn:2.4, ic:9, fmt:'1/1.8"', mount:'C', mod:0.30, mp:5, dist:'低', tier:'entry', type:'fa' },
 
+  /* ── 长焦 FA 定焦 · 75mm / 100mm（真实在售型号）──
+     75mm 是中小视场、长工作距离工况的常用档位；海康 MF7538M-ML 为微距款，
+     标称 WD 250~550mm、倍率 0.46~0.16×，正好覆盖 400mm / 0.236× 这一工况 */
+  { brand:'海康威视', series:'MVL-MF', model:'MVL-MF7538M-ML', f:75, fn:3.8, ic:11, fmt:'2/3"', mount:'C', mod:0.25, mp:5, dist:'极低', tier:'high', type:'fa' },
+  { brand:'奥普特', series:'OPT-C', model:'OPT-C7528-5M', f:75, fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:0.60, mp:5, dist:'极低', tier:'mid', type:'fa' },
+  { brand:'长步道', series:'FA', model:'FA7502A', f:75, fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:0.40, mp:5, dist:'低', tier:'entry', type:'fa' },
+  { brand:'Computar', series:'MP2', model:'M7528-MP2', f:75, fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:0.30, mp:1.5, dist:'低', tier:'mid', type:'fa' },
+  { brand:'LumaSpec', series:'LS-FFL', model:'LS-FFL-1339', f:100, fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:2.00, mp:8, dist:'低', tier:'mid', type:'fa' },
+  { brand:'海康威视', series:'MVL-KF', model:'MVL-KF10020M-5MP-NIR', f:100, fn:2.0, ic:16, fmt:'1"', mount:'C', mod:0.50, mp:5, dist:'低', tier:'high', type:'fa' },
+
   /* ── CST康视达 物方远心 · 2/3"（真实型号 CST-MF 系列）──
      远心工作距离固定，不可调；匹配依据为固定放大倍率 */
   { brand:'CST康视达', series:'MF远心', model:'CST-MF005F90H-D45', f:null, mag:0.5, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:90,  dof:1.20, mp:5, dist:'极低', tier:'high', type:'tele' },
@@ -301,6 +311,67 @@ const ENGINE = {
     if (k > 2.2) return null;
     const ext = lens.f * (k - 1) * (1 + mNative);
     return ext > 0.3 && ext < 60 ? ext : null;
+  },
+
+  /* ==========================================================
+     零结果补救：当所需焦距超出库内最长焦距时，反推把 WD 缩到多少
+     就能用现有镜头达成同一倍率。
+     原理：m = f/(WD-f) ⇒ 给定目标倍率 m，WD = f·(1+m)/m
+     ========================================================== */
+  suggestWD({ fTarget, targetM, wd }) {
+    const faLenses = LENSES.filter(l => l.type === 'fa' && l.f);
+    const maxFocal = Math.max(...faLenses.map(l => l.f));
+    const minFocal = Math.min(...faLenses.map(l => l.f));
+    const overRange = fTarget > maxFocal * 1.02;
+    const suggestions = [];
+
+    if (overRange) {
+      /* 先按 MOD 可行性过滤，再按焦距档去重（避免某档最高像素型号 MOD 过大
+         而把同档其他可行型号一起误杀），最后取最长的几档焦距 */
+      const byFocal = {};
+      for (const lens of faLenses) {
+        const needWD = lens.f * (1 + targetM) / targetM;
+        const modMm = (lens.mod || 0) * 1000;
+        /* WD 必须满足最近物距，且不能比原 WD 长（否则不叫"缩短补救"） */
+        if (needWD < modMm * 1.02) continue;
+        if (needWD >= wd) continue;
+        if (!byFocal[lens.f] || lens.mp > byFocal[lens.f].lens.mp) {
+          byFocal[lens.f] = { lens, needWD };
+        }
+      }
+      const candidates = Object.values(byFocal)
+        .sort((a, b) => b.lens.f - a.lens.f).slice(0, 3);
+      for (const { lens, needWD } of candidates) {
+        suggestions.push({
+          lens,
+          wd: Math.round(needWD),
+          f: lens.f,
+          shortenPct: Math.round((1 - needWD / wd) * 100)
+        });
+      }
+      /* 优先推荐改动最小（WD 最接近原值）的方案 */
+      suggestions.sort((a, b) => b.wd - a.wd);
+    }
+
+    let message = '';
+    if (overRange && suggestions.length) {
+      const s = suggestions[0];
+      message = `所需焦距 ${fTarget.toFixed(1)}mm 超出库内最长 ${maxFocal}mm。` +
+        `把工作距离从 ${Math.round(wd)}mm 缩短到约 ${s.wd}mm（缩短 ${s.shortenPct}%），` +
+        `即可用 ${s.lens.brand} ${s.lens.model}（${s.f}mm）达到 ${targetM.toFixed(3)}× 倍率。`;
+    } else if (overRange) {
+      message = `所需焦距 ${fTarget.toFixed(1)}mm 超出库内最长 ${maxFocal}mm，` +
+        `且现有镜头的最近物距均高于达成该倍率所需的工作距离，建议向厂商索取更长焦型号。`;
+    }
+
+    return {
+      overRange,
+      fTarget,
+      maxFocal,
+      minFocal,
+      suggestions,
+      message
+    };
   },
 
   /* ==========================================================

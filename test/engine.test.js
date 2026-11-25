@@ -188,6 +188,61 @@ section('光源引擎 · 约束响应');
 }
 
 /* ============================================================
+   第三部分：长焦覆盖与零结果反推（新功能）
+   ============================================================ */
+section('长焦镜头覆盖 · 75mm / 100mm');
+const faFocals = [...new Set(LENSES.filter(l => l.type === 'fa').map(l => l.f))].sort((a, b) => a - b);
+console.log('FA 焦距档位:', faFocals.join(', '));
+assert(faFocals.includes(75), `FA 档位含 75mm（现 ${faFocals.join(',')}）`);
+assert(faFocals.some(f => f >= 100), `FA 档位含 ≥100mm（现 ${faFocals.join(',')}）`);
+const longLenses = LENSES.filter(l => l.type === 'fa' && l.f >= 75);
+assert(longLenses.some(l => l.mp >= 5), '长焦档至少有 5MP 型号，可配主流 5MP 相机');
+assert(longLenses.some(l => l.mod <= 0.3), '长焦档至少有 MOD ≤ 0.3m 型号，适配 400mm 级工作距离');
+longLenses.forEach(l => assert(/^[A-Za-z0-9\-]+$/.test(l.model), `${l.model} 长焦型号格式合法`));
+
+section('零结果工况 · 截图 FOV50x30 / 0.12mm / WD400');
+{
+  const fovW = 50, fovH = 30, tol = 0.12, wd = 400, heightDiff = 1;
+  /* 截图实际选用 2448×2048 的 2/3" 相机（50/2448=20.4µm/px，倍率 0.236×） */
+  const c = CAMERAS.find(x => x.id === 'cam-5');
+  assert(!!c, '截图工况相机 cam-5 存在');
+  if (c) {
+    const cam = ENGINE.camera(c.w, c.h, c.px, c.fmt, c.mount);
+    const mReq = ENGINE.target(fovW, fovH, cam).m;
+    const ctx = {
+      cam, targetM: mReq, fovW, fovH, wd, tol, heightDiff,
+      budget: 'any', teleMode: 'off', fnum: 4, moving: false
+    };
+    const passed = LENSES.filter(l => ENGINE.filter(l, ctx).length === 0);
+    console.log(`目标倍率 ${mReq.toFixed(3)}，通过镜头: ${passed.map(l => l.model + '(' + l.f + 'mm)').join(', ') || '无'}`);
+    assert(passed.length > 0, `截图工况不再零结果（现 ${passed.length} 款）`);
+    assert(passed.some(l => l.f >= 70), '可用镜头含 75mm 长焦档');
+  }
+}
+
+section('ENGINE.suggestWD · 焦距超范围自动反推工作距离');
+{
+  const r = ENGINE.suggestWD({ fTarget: 130, targetM: 0.13, wd: 1000 });
+  assert(typeof r === 'object' && r !== null, 'suggestWD 返回对象');
+  assert(Array.isArray(r.suggestions), 'suggestions 为数组');
+  assert(r.overRange === true, '目标焦距 130mm 超库内最长焦距时标记 overRange');
+  assert(r.suggestions.length > 0, '超范围时给出至少一条可行建议');
+  const s = r.suggestions[0];
+  assert(s.lens && s.lens.f >= 75, '首选建议用库内长焦镜头');
+  assert(s.f === 100, '首选推荐改动最小的 100mm 档（而非 75mm）');
+  assert(s.wd >= s.lens.mod * 1000, '建议工作距离满足镜头最近物距');
+  const cam = ENGINE.camera(2448, 2048, 3.45, '2/3"', 'C');
+  const m = ENGINE.lensGeometry(s.lens, s.wd, cam).m;
+  console.log(`建议 ${s.lens.model}: WD ${s.wd.toFixed(0)}mm → 倍率 ${m.toFixed(3)}（目标 0.130）`);
+  assert(Math.abs(m - 0.13) < 0.02, '建议 WD 下倍率接近目标');
+  assert(typeof r.message === 'string' && r.message.length > 10, '返回可直接展示的中文建议文案');
+}
+{
+  const r = ENGINE.suggestWD({ fTarget: 40, targetM: 0.2, wd: 240 });
+  assert(r.overRange === false, '目标焦距在库内范围时不标记超范围');
+}
+
+/* ============================================================
    汇总
    ============================================================ */
 console.log('\n' + '='.repeat(50));

@@ -644,6 +644,28 @@ input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .notice.info { background: var(--accent-bg); border-color: #b3dbe3; color: #075461; }
 .notice b { font-weight: 650; }
 
+/* 零结果补救：可应用的工作距离建议 */
+.notice.rescue { align-items: flex-start; }
+.rescue-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 9px;
+}
+.btn-apply-wd {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  padding: 6px 11px;
+  border-radius: 6px;
+  border: 1px solid #8fbf9f;
+  background: #fff;
+  color: #14603f;
+  transition: background .15s, border-color .15s;
+}
+.btn-apply-wd:hover { background: #e4f4ea; border-color: #14603f; }
+
 /* ---------- 明细表 ---------- */
 details.detail {
   background: var(--panel);
