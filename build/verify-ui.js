@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
     parts.push('targetLabel=' + (LAST.lightRec && LAST.lightRec.target ? LAST.lightRec.target.label : 'none'));
     parts.push('top=' + (LAST.passed && LAST.passed[0] ? LAST.passed[0].lens.model : 'none'));
     parts.push('topF=' + (LAST.passed && LAST.passed[0] ? LAST.passed[0].lens.f : 0));
+    parts.push('lensBrands=' + [...new Set((LAST.passed || []).map(function(p){return p.lens.brand;}))].join('+'));
     parts.push('fTarget=' + LAST.fTarget.toFixed(1));
     var apply = document.querySelector('.btn-apply-wd');
     parts.push('rescueBtn=' + (apply ? apply.dataset.wd : 'none'));
@@ -115,4 +116,15 @@ make('case-stitch-impractical.html', `
   document.getElementById('in-wd').value = 800;
   document.getElementById('in-stitch').checked = true;
   S.camMode = 'auto';
+`);
+
+/* 工况七：经济预算 + 常规工况 → 应露出 Kowa JC / VST 等新增经济型镜头 */
+make('case-expanded-brands.html', `
+  document.getElementById('in-fovw').value = 60;
+  document.getElementById('in-fovh').value = 45;
+  document.getElementById('in-tol').value = 0.15;
+  document.getElementById('in-wd').value = 300;
+  document.getElementById('in-hd').value = 0.5;
+  S.camMode = 'auto';
+  S.budget = 'entry';
 `);

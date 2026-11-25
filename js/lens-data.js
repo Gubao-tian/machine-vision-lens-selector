@@ -61,7 +61,11 @@ const CAMERAS = [
   { id:'cam-dh-pol',   brand:'大恒图像', model:'MER2-503-36U3M POL', mp:5.1, w:2448, h:2048, px:3.45, fmt:'2/3"', mount:'C', shutter:'全局', iface:'USB3', sensor:'IMX264 MZR 偏振', tier:'high' },
 
   /* ── 迈德威视 MindVision（国产经济型产线常用）── */
-  { id:'cam-mv-500',   brand:'迈德威视', model:'MV-SUA500C/M', mp:5.0, w:2592, h:1944, px:2.2, fmt:'1/2.5"', mount:'C', shutter:'卷帘', iface:'USB3', sensor:'CMOS 1/2.5"', tier:'entry' }
+  { id:'cam-mv-500',   brand:'迈德威视', model:'MV-SUA500C/M', mp:5.0, w:2592, h:1944, px:2.2, fmt:'1/2.5"', mount:'C', shutter:'卷帘', iface:'USB3', sensor:'CMOS 1/2.5"', tier:'entry' },
+
+  /* ── 扩充：海康 20MP 大面阵 + Basler ace U 全局快门（均据厂商规格书）── */
+  { id:'cam-hk-200',   brand:'海康威视', model:'MV-CS200-10GM', mp:20.0, w:5472, h:3648, px:2.4, fmt:'1"', mount:'C', shutter:'卷帘', iface:'GigE', sensor:'IMX183', tier:'high' },
+  { id:'cam-basler-5u',brand:'Basler',  model:'acA2440-35um',   mp:5.0,  w:2448, h:2048, px:3.45, fmt:'2/3"', mount:'C', shutter:'全局', iface:'USB3', sensor:'IMX264', tier:'high' }
 ];
 
 /* ---------- 镜头库 ----------
@@ -145,12 +149,55 @@ const LENSES = [
   { brand:'Kowa', series:'LM-FC24M', model:'LM75FC24M', f:75,  fn:2.5, ic:18, fmt:'1.1"', mount:'C', mod:0.15, mp:24, dist:'低', tier:'high', type:'fa' },
   { brand:'Kowa', series:'LM-FC24M', model:'LM100FC24M', f:100, fn:3.5, ic:19, fmt:'1.1"', mount:'C', mod:0.15, mp:24, dist:'低', tier:'high', type:'fa' },
 
+  /* ── Kowa JC 高性价比系列 · 2/3"(φ11) · C口（据 Kowa FA 官方手册）──
+     产线最常用经济型 FA 定焦，焦距 6~100mm 全覆盖，F 与 MOD 按手册填列 */
+  { brand:'Kowa', series:'JC', model:'LM6JC',   f:6,   fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:2, dist:'中',  tier:'entry', type:'fa' },
+  { brand:'Kowa', series:'JC', model:'LM8JC',   f:8,   fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:2, dist:'中',  tier:'entry', type:'fa' },
+  { brand:'Kowa', series:'JC', model:'LM12JC',  f:12,  fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:2, dist:'中',  tier:'entry', type:'fa' },
+  { brand:'Kowa', series:'JC', model:'LM16JC',  f:16,  fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.20, mp:2, dist:'低',  tier:'entry', type:'fa' },
+  { brand:'Kowa', series:'JC', model:'LM25JC',  f:25,  fn:1.6, ic:11, fmt:'2/3"', mount:'C', mod:0.20, mp:2, dist:'低',  tier:'entry', type:'fa' },
+  { brand:'Kowa', series:'JC', model:'LM35JC',  f:35,  fn:1.6, ic:11, fmt:'2/3"', mount:'C', mod:0.30, mp:2, dist:'低',  tier:'entry', type:'fa' },
+  { brand:'Kowa', series:'JC', model:'LM50JC',  f:50,  fn:2.0, ic:11, fmt:'2/3"', mount:'C', mod:0.50, mp:2, dist:'低',  tier:'entry', type:'fa' },
+  { brand:'Kowa', series:'JC', model:'LM75JC',  f:75,  fn:2.5, ic:11, fmt:'2/3"', mount:'C', mod:1.20, mp:2, dist:'低',  tier:'entry', type:'fa' },
+  { brand:'Kowa', series:'JC', model:'LM100JC', f:100, fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:2.00, mp:2, dist:'低',  tier:'entry', type:'fa' },
+
+  /* ── Kowa JC10M 高分辨率系列 · 2/3"(φ11) · 10MP（据 Kowa 官方手册）──
+     200lp/mm 中心解析力、畸变 0.05~0.09%，适配 500 万以上高像素相机 */
+  { brand:'Kowa', series:'JC10M', model:'LM25JC10M', f:25, fn:1.8, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:10, dist:'极低', tier:'high', type:'fa' },
+  { brand:'Kowa', series:'JC10M', model:'LM35JC10M', f:35, fn:2.0, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:10, dist:'极低', tier:'high', type:'fa' },
+  { brand:'Kowa', series:'JC10M', model:'LM50JC10M', f:50, fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:10, dist:'极低', tier:'high', type:'fa' },
+
+  /* ── Computar MP2 超低畸变系列 · 2/3"(φ11) · 1.5MP（据 Computar 官网）──
+     老牌百万像素 FA 镜头，带光圈/对焦锁紧螺丝，产线存量极大 */
+  { brand:'Computar', series:'MP2', model:'M0814-MP2', f:8,  fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:1.5, dist:'低', tier:'mid', type:'fa' },
+  { brand:'Computar', series:'MP2', model:'M1214-MP2', f:12, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:1.5, dist:'低', tier:'mid', type:'fa' },
+  { brand:'Computar', series:'MP2', model:'M1614-MP2', f:16, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.20, mp:1.5, dist:'低', tier:'mid', type:'fa' },
+  { brand:'Computar', series:'MP2', model:'M2514-MP2', f:25, fn:1.4, ic:11, fmt:'2/3"', mount:'C', mod:0.30, mp:1.5, dist:'低', tier:'mid', type:'fa' },
+
+  /* ── VST VS-VM 高对比定焦 · 2/3"(φ11) · C口（据 VST 官方规格）──
+     韩国 VST 产线常用经济型 FA，畸变 0.01~1.42% */
+  { brand:'VST', series:'VS-VM', model:'VS-0620VM', f:6,  fn:2.0, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:2, dist:'中',  tier:'entry', type:'fa' },
+  { brand:'VST', series:'VS-VM', model:'VS-0818VM', f:8,  fn:1.8, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:2, dist:'中',  tier:'entry', type:'fa' },
+  { brand:'VST', series:'VS-VM', model:'VS-1218VM', f:12, fn:1.8, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:2, dist:'中',  tier:'entry', type:'fa' },
+  { brand:'VST', series:'VS-VM', model:'VS-1618VM', f:16, fn:1.8, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:2, dist:'低',  tier:'entry', type:'fa' },
+  { brand:'VST', series:'VS-VM', model:'VS-2518VM', f:25, fn:1.8, ic:11, fmt:'2/3"', mount:'C', mod:0.25, mp:2, dist:'低',  tier:'entry', type:'fa' },
+  { brand:'VST', series:'VS-VM', model:'VS-3518VM', f:35, fn:1.8, ic:11, fmt:'2/3"', mount:'C', mod:0.25, mp:2, dist:'低',  tier:'entry', type:'fa' },
+  { brand:'VST', series:'VS-VM', model:'VS-5026VM', f:50, fn:2.6, ic:11, fmt:'2/3"', mount:'C', mod:0.40, mp:2, dist:'低',  tier:'entry', type:'fa' },
+
   /* ── CST康视达 物方远心 · 2/3"（真实型号 CST-MF 系列）──
      远心工作距离固定，不可调；匹配依据为固定放大倍率 */
   { brand:'CST康视达', series:'MF远心', model:'CST-MF005F90H-D45', f:null, mag:0.5, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:90,  dof:1.20, mp:5, dist:'极低', tier:'high', type:'tele' },
   { brand:'CST康视达', series:'MF远心', model:'CST-MF01F40H-D45',  f:null, mag:1.0, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:65,  dof:0.60, mp:5, dist:'极低', tier:'high', type:'tele' },
   { brand:'CST康视达', series:'MF远心', model:'CST-MF01F60H-D66',  f:null, mag:2.0, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:110, dof:0.32, mp:5, dist:'极低', tier:'high', type:'tele' },
-  { brand:'CST康视达', series:'MF远心', model:'CST-MF03F80H-D58',  f:null, mag:4.0, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:65,  dof:0.10, mp:5, dist:'极低', tier:'high', type:'tele' }
+  { brand:'CST康视达', series:'MF远心', model:'CST-MF03F80H-D58',  f:null, mag:4.0, fn:null, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:65,  dof:0.10, mp:5, dist:'极低', tier:'high', type:'tele' },
+
+  /* ── Moritex MML-HR 远心 · 2/3"（据 Moritex 官方手册，WD/倍率/景深实测值）──
+     日本 Moritex 高精度测量远心，畸变 ≤0.03%，AOI/尺寸测量常用 */
+  { brand:'Moritex', series:'MML-HR', model:'MML05-HR110', f:null, mag:0.5, fn:9.5, ic:11, fmt:'2/3"', mount:'C', mod:null, wd:110, dof:3.0,  mp:5, dist:'极低', tier:'high', type:'tele' },
+  { brand:'Moritex', series:'MML-HR', model:'MML1-HR65D',  f:null, mag:1.0, fn:11,  ic:11, fmt:'2/3"', mount:'C', mod:null, wd:65,  dof:0.88, mp:5, dist:'极低', tier:'high', type:'tele' },
+  { brand:'Moritex', series:'MML-HR', model:'MML2-HR65D',  f:null, mag:2.0, fn:13.5,ic:11, fmt:'2/3"', mount:'C', mod:null, wd:65,  dof:0.27, mp:5, dist:'极低', tier:'high', type:'tele' },
+  { brand:'Moritex', series:'MML-HR', model:'MML4-HR65D',  f:null, mag:4.0, fn:17.9,ic:11, fmt:'2/3"', mount:'C', mod:null, wd:65,  dof:0.09, mp:5, dist:'极低', tier:'high', type:'tele' },
+  { brand:'Moritex', series:'MML-HR', model:'MML6-HR110D', f:null, mag:6.0, fn:39.9,ic:11, fmt:'2/3"', mount:'C', mod:null, wd:110, dof:0.09, mp:5, dist:'极低', tier:'high', type:'tele' }
 ];
 
 /* ============================================================
@@ -652,6 +699,10 @@ const LIGHTS = [
   /* ── CCS 西西斯（日本，产线高端检测常用）── */
   { brand:'CCS', series:'LFX3', model:'LFX3-100SW', form:'dome', method:'diffuse', size:100, color:'白', cri:95, strobe:false, angle:'平面无影', tier:'high', note:'平面无影光源，曲面/凹凸面/印字均匀检测' },
   { brand:'CCS', series:'LFX3', model:'LFX3-50SW', form:'dome', method:'diffuse', size:50, color:'白', cri:95, strobe:false, angle:'平面无影', tier:'high', note:'小尺寸平面无影，紧凑工位' },
+  { brand:'CCS', series:'LFX3', model:'LFX3-25SW', form:'dome', method:'diffuse', size:25, color:'白', cri:95, strobe:false, angle:'平面无影', tier:'high', note:'超小尺寸平面无影，微小件/芯片检测' },
+  { brand:'CCS', series:'LFX3', model:'LFX3-75SW', form:'dome', method:'diffuse', size:75, color:'白', cri:95, strobe:false, angle:'平面无影', tier:'high', note:'中尺寸平面无影，曲面/印字均匀检测' },
+  { brand:'CCS', series:'LFX3', model:'LFX3-150SW', form:'dome', method:'diffuse', size:150, color:'白', cri:95, strobe:false, angle:'平面无影', tier:'high', note:'大尺寸平面无影，大视野曲面检测' },
+  { brand:'CCS', series:'LFX3', model:'LFX3-50RD', form:'dome', method:'diffuse', size:50, color:'红', cri:null, strobe:false, angle:'平面无影', tier:'high', note:'红光平面无影，提升深色表面对比' },
   { brand:'CCS', series:'LFV3', model:'LFV3-100SW', form:'coax', method:'bright', size:102, color:'白', cri:95, strobe:false, angle:'同轴', tier:'high', note:'高分辨率同轴，镜面/ glossy 表面缺陷检测' },
   { brand:'CCS', series:'LFR', model:'LFR-100SW2', form:'ring-high', method:'bright', size:102, color:'白', cri:93, strobe:true, angle:'高角度', tier:'high', note:'面发光环形，金属件表面/字符检测' },
   { brand:'CCS', series:'LFR', model:'LFR-100RD2', form:'ring-high', method:'bright', size:102, color:'红', cri:null, strobe:true, angle:'高角度', tier:'high', note:'红光环形，提升金属表面对比' }

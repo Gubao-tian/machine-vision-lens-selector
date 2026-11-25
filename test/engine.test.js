@@ -457,6 +457,57 @@ if (typeof ENGINE.suggestStitch === 'function') {
 }
 
 /* ============================================================
+   第九部分：扩充真实型号库（产线主流品牌）
+   所有型号均来自厂商规格书/授权代理页，非虚构
+   ============================================================ */
+{
+  const camModels = CAMERAS.map(c => c.model);
+  const lensModels = LENSES.map(l => l.model);
+  const lightModels = LIGHTS.map(l => l.model);
+
+  /* 相机：海康 20MP + Basler ace U 5MP 全局快门 */
+  assert(camModels.includes('MV-CS200-10GM'), '相机库含海康 MV-CS200-10GM (20MP/1")');
+  assert(camModels.includes('acA2440-35um'), '相机库含 Basler acA2440-35um (5MP 全局)');
+
+  /* 镜头：Kowa JC 全系列（6/8/12/16/25/35/50/75/100mm） */
+  const kowaJC = ['LM6JC','LM8JC','LM12JC','LM16JC','LM25JC','LM35JC','LM50JC','LM75JC','LM100JC'];
+  kowaJC.forEach(m => assert(lensModels.includes(m), `镜头库含 Kowa ${m}`));
+
+  /* 镜头：Kowa JC10M 高分辨率系列（25/35/50mm，10MP） */
+  const kowaJC10M = ['LM25JC10M','LM35JC10M','LM50JC10M'];
+  kowaJC10M.forEach(m => assert(lensModels.includes(m), `镜头库含 Kowa ${m} (10MP)`));
+
+  /* 镜头：Computar MP2 系列（8/12/16/25mm，超低畸变） */
+  const compMP2 = ['M0814-MP2','M1214-MP2','M1614-MP2','M2514-MP2'];
+  compMP2.forEach(m => assert(lensModels.includes(m), `镜头库含 Computar ${m}`));
+
+  /* 光源：CCS LFX3 平面无影系列（25/50/100/150 白光） */
+  const ccsLFX3 = ['LFX3-25SW','LFX3-50SW','LFX3-100SW','LFX3-150SW'];
+  ccsLFX3.forEach(m => assert(lightModels.includes(m), `光源库含 CCS ${m}`));
+
+  /* 规模门槛：扩充后总量显著提升 */
+  assert(CAMERAS.length >= 18, `相机库 ≥18 款（现 ${CAMERAS.length}）`);
+  assert(LENSES.length >= 65, `镜头库 ≥65 款（现 ${LENSES.length}）`);
+  assert(LIGHTS.length >= 38, `光源库 ≥38 款（现 ${LIGHTS.length}）`);
+
+  /* 型号不重复 */
+  assert(new Set(camModels).size === camModels.length, '相机型号无重复');
+  assert(new Set(lensModels).size === lensModels.length, '镜头型号无重复');
+  assert(new Set(lightModels).size === lightModels.length, '光源型号无重复');
+
+  /* 数据完整性：新增镜头关键字段齐全且数值合法 */
+  const lm25 = LENSES.find(l => l.model === 'LM25JC');
+  assert(lm25 && lm25.f === 25 && lm25.ic === 11 && lm25.mount === 'C' && lm25.type === 'fa',
+    'Kowa LM25JC 字段正确 (25mm/φ11/C口/FA)');
+  const lm50jc10m = LENSES.find(l => l.model === 'LM50JC10M');
+  assert(lm50jc10m && lm50jc10m.mp >= 10, 'Kowa LM50JC10M 标称 10MP');
+
+  /* 品牌多样性：镜头品牌 ≥9 家 */
+  const lensBrands = new Set(LENSES.map(l => l.brand));
+  assert(lensBrands.size >= 9, `镜头品牌 ≥9 家（现 ${lensBrands.size}）`);
+}
+
+/* ============================================================
    汇总
    ============================================================ */
 console.log('\n' + '='.repeat(50));
