@@ -4,12 +4,17 @@
 
 纯静态网页，零依赖，手机与电脑通用。
 
+## 在线演示
+
+**[点此打开在线工具](https://gubao-tian.github.io/machine-vision-lens-selector/)** —
+https://gubao-tian.github.io/machine-vision-lens-selector/
+
+无需安装、无需登录，手机与电脑均可直接打开使用。
+
 ## 使用方式
 
-直接打开 `index.html` 即可，无需服务器、无需安装。
-
-- **在线版**：通过分享链接或 GitHub Pages 访问
-- **离线版**：`index.html` 是自包含单文件（样式与脚本全部内联），可直接发给他人双击打开
+- **在线版**：访问上面的 GitHub Pages 链接，每次推送后自动更新
+- **离线版**：直接打开 `index.html`，它是自包含单文件（样式与脚本全部内联），可发给他人双击打开
 
 ## 选型逻辑
 
