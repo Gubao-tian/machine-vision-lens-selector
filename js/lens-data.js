@@ -630,6 +630,26 @@ const LIGHT_SCENES = {
     install: '背光源须安装在玻璃背面并与相机光轴对齐，物体两侧都要留出安装空间；背光发光面应大于视野 10% 以上。',
     colorTip: '轮廓检测选白光或红光（CMOS 响应高）；表面脏污可选蓝光提升散射对比。'
   },
+  'pcb': {
+    label: 'PCB / 电路板',
+    desc: '阻焊层与丝印、焊盘并存，需均匀明场还原颜色并抑制焊盘镜面反光',
+    methods: { bright: 100, diffuse: 88, dark: 52, back: 30 },
+    forms: { 'coax': 100, 'dome': 90, 'ring-high': 82, 'bar': 78, 'ring-low': 48, 'spot': 42, 'backlight': 20 },
+    primary: '同轴 · 均匀明场',
+    guide: '同轴光把照明与相机光轴合一，消除焊盘、金手指的镜面反光并均匀照亮阻焊层与丝印，适合字符、极性标记与线路检测。需凸显焊点立体形态时切换到低角度暗场。',
+    install: '同轴光源须与镜头光轴对齐；穹顶光需罩住板面并预留安装空间；大面积板可分多段条形光对称布置。',
+    colorTip: '识别丝印颜色与元件色环须用高显色白光（CRI ≥ 90、色温 5000~6500K）。'
+  },
+  'plastic': {
+    label: '塑胶 / 注塑件',
+    desc: '哑光注塑表面，关注缩水、飞边、缺料与外观瑕疵',
+    methods: { bright: 100, diffuse: 86, dark: 60, back: 45 },
+    forms: { 'ring-high': 96, 'dome': 88, 'bar': 82, 'coax': 68, 'ring-low': 62, 'backlight': 50, 'spot': 46 },
+    primary: '明场 · 均匀漫射',
+    guide: '高角度环形光或穹顶光均匀照亮注塑表面，缩水、熔接痕等缺陷形成明暗对比；飞边、缺料可用低角度斜光增强轮廓。深色塑胶适当提高光源亮度。',
+    install: '光源对称布置避免单侧阴影；穹顶光罩住工件时须确认 WD 留有余量。',
+    colorTip: '外观颜色与色差检测选高显色白光（CRI ≥ 90）。'
+  },
   'general': {
     label: '通用漫反射件',
     desc: '一般哑光表面，均匀明场照明即可',
@@ -647,7 +667,10 @@ const LIGHT_TARGETS = {
   'defect':     { label: '表面缺陷（划痕/压伤/脏污）', methodFactor: { dark: 1.15, bright: 0.90 }, formFactor: { 'ring-low': 1.15, 'bar': 1.10, 'coax': 0.95 } },
   'dimension':  { label: '轮廓/尺寸测量',              methodFactor: { back: 1.20, dark: 1.05 }, formFactor: { 'backlight': 1.20, 'coax': 1.05, 'bar': 1.05 } },
   'appearance': { label: '颜色/外观/字符',             methodFactor: { bright: 1.15, diffuse: 1.05 }, formFactor: { 'ring-high': 1.15, 'dome': 1.10, 'coax': 1.05 } },
-  'presence':   { label: '有无/定位',                  methodFactor: { bright: 1.05, back: 1.10 }, formFactor: { 'backlight': 1.10, 'ring-high': 1.05, 'bar': 1.05 } }
+  'presence':   { label: '有无/定位',                  methodFactor: { bright: 1.05, back: 1.10 }, formFactor: { 'backlight': 1.10, 'ring-high': 1.05, 'bar': 1.05 } },
+  'ocr':        { label: '条码/字符识别（OCR）',       methodFactor: { bright: 1.20, diffuse: 1.05 }, formFactor: { 'coax': 1.15, 'ring-high': 1.10, 'bar': 1.08 } },
+  'solder':     { label: '焊点/焊接质量',              methodFactor: { dark: 1.18, bright: 0.95 }, formFactor: { 'ring-low': 1.15, 'coax': 1.10, 'spot': 1.05 } },
+  'level':      { label: '液位/灌装量',                methodFactor: { back: 1.25, dark: 1.05 }, formFactor: { 'backlight': 1.25, 'bar': 1.10, 'coax': 1.05 } }
 };
 
 /* ==========================================================

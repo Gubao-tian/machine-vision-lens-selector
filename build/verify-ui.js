@@ -21,6 +21,9 @@ document.addEventListener('DOMContentLoaded', function () {
     parts.push('lensShown=' + document.querySelectorAll('#out-lenses .lens-card').length);
     parts.push('lightShown=' + document.querySelectorAll('#out-lights .light-card').length);
     parts.push('lightBrands=' + [...new Set((LAST.lightRec ? LAST.lightRec.lights : []).map(function(p){return p.light.brand;}))].join('+'));
+    parts.push('lightTopForm=' + (LAST.lightRec && LAST.lightRec.lights[0] ? LAST.lightRec.lights[0].light.form : 'none'));
+    parts.push('sceneLabel=' + (LAST.lightRec && LAST.lightRec.scene ? LAST.lightRec.scene.label : 'none'));
+    parts.push('targetLabel=' + (LAST.lightRec && LAST.lightRec.target ? LAST.lightRec.target.label : 'none'));
     parts.push('top=' + (LAST.passed && LAST.passed[0] ? LAST.passed[0].lens.model : 'none'));
     parts.push('topF=' + (LAST.passed && LAST.passed[0] ? LAST.passed[0].lens.f : 0));
     parts.push('fTarget=' + LAST.fTarget.toFixed(1));
@@ -63,6 +66,19 @@ make('case-display-caps.html', `
   S.camMode = 'auto';
   S.lightScene = 'general';
   S.lightTarget = 'defect';
+  S.lightReflect = 'mid';
+`);
+
+/* 工况四：新增产线分类 PCB + OCR → 新场景/目标须在浏览器端真实出结果 */
+make('case-new-types.html', `
+  document.getElementById('in-fovw').value = 100;
+  document.getElementById('in-fovh').value = 70;
+  document.getElementById('in-tol').value = 0.2;
+  document.getElementById('in-wd').value = 300;
+  document.getElementById('in-hd').value = 1;
+  S.camMode = 'auto';
+  document.getElementById('in-light-scene').value = 'pcb';
+  document.getElementById('in-light-target').value = 'ocr';
   S.lightReflect = 'mid';
 `);
 

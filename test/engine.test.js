@@ -119,7 +119,9 @@ LIGHTS.forEach(l => {
   assert(l.size > 0, `${l.model} 尺寸为正`);
   assert(typeof l.strobe === 'boolean', `${l.model} 频闪标记为布尔`);
 });
-assert(Object.keys(LIGHT_SCENES).length === 5, '场景规则含 5 类（含通用）');
+assert(Object.keys(LIGHT_SCENES).length >= 5, `场景规则 ≥5 类（现 ${Object.keys(LIGHT_SCENES).length}）`);
+assert(['metal-scratch', 'curve-reflect', 'print-label', 'glass-transparent', 'general']
+  .every(k => !!LIGHT_SCENES[k]), '原有 5 类场景均保留');
 
 section('光源引擎 · 四类场景首选');
 const baseCtx = { colorNeed: false, moving: false, budget: 'any', fovW: 80, fovH: 60, wd: 300, backlightOk: true };
@@ -354,6 +356,47 @@ assert(DISPLAY_CAPS && DISPLAY_CAPS.lights >= 8,
   console.log(`通用场景光源露出 ${r.lights.length} 款，含品牌: ${[...new Set(r.lights.map(p => p.light.brand))].join('/')}`);
   assert(r.lights.length >= 7, `光源推荐露出 ≥7 款（现 ${r.lights.length}）`);
   assert(r.lights.length <= (DISPLAY_CAPS ? DISPLAY_CAPS.lights : 8), '光源露出不超过配置上限');
+}
+
+/* ============================================================
+   第七部分：检测目标与被测物类型扩充（产线常见分类）
+   ============================================================ */
+section('光源分类 · 产线常见检测目标与被测物类型');
+const LT = LIGHT_ENGINE.targets;
+const LS = LIGHT_ENGINE.scenes;
+
+/* 新增检测目标：OCR 读码 / 焊点焊接 / 液位灌装 */
+['ocr', 'solder', 'level'].forEach(k => {
+  assert(!!LT[k], `检测目标新增「${k}」`);
+  assert(LT[k] && !!LT[k].label, `检测目标「${k}」含中文标签`);
+  assert(LT[k] && !!LT[k].methodFactor && !!LT[k].formFactor,
+    `检测目标「${k}」含打光/形态修饰因子`);
+});
+assert(Object.keys(LT).length >= 7, `检测目标类型数 ≥7（现 ${Object.keys(LT).length}）`);
+
+/* 新增被测物类型：PCB / 塑胶注塑 */
+['pcb', 'plastic'].forEach(k => {
+  assert(!!LS[k], `被测物类型新增「${k}」`);
+  assert(LS[k] && !!LS[k].label && !!LS[k].desc, `被测物「${k}」含标签与描述`);
+  assert(LS[k] && LS[k].methods && LS[k].forms && !!LS[k].primary
+    && !!LS[k].guide && !!LS[k].install && !!LS[k].colorTip,
+    `被测物「${k}」打光规则字段完整`);
+  assert(LS[k] && ['bright', 'diffuse', 'dark', 'back'].every(m => typeof LS[k].methods[m] === 'number'),
+    `被测物「${k}」四种打光方式均有评分`);
+  assert(LS[k] && ['ring-low', 'ring-high', 'bar', 'coax', 'dome', 'spot', 'backlight']
+    .every(fo => typeof LS[k].forms[fo] === 'number'),
+    `被测物「${k}」七种光源形态均有评分`);
+});
+assert(Object.keys(LS).length >= 7, `被测物类型数 ≥7（现 ${Object.keys(LS).length}）`);
+
+/* 组合验证：新目标 + 新场景须能出结果 */
+{
+  const r = LIGHT_ENGINE.recommend({ ...baseCtx, scene: 'pcb', target: 'ocr', reflect: 'mid' });
+  assert(r.lights.length >= 5, `PCB + OCR 组合能出 ≥5 款光源（现 ${r.lights.length}）`);
+}
+{
+  const r = LIGHT_ENGINE.recommend({ ...baseCtx, scene: 'glass-transparent', target: 'level', reflect: 'mid' });
+  assert(r.lights.length >= 5, `透明件 + 液位 组合能出 ≥5 款光源（现 ${r.lights.length}）`);
 }
 
 /* ============================================================
