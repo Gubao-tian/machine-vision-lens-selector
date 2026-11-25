@@ -46,7 +46,18 @@ const CAMERAS = [
   { id:'cam-8',   brand:'海康威视',   model:'MV-CS050-10UM',   mp:5.1,  w:2448, h:2048, px:3.45, fmt:'2/3"',    mount:'C', shutter:'全局', iface:'USB3',  sensor:'Sony IMX264', tier:'high' },
   { id:'cam-12',  brand:'CST康视达', model:'CST-CG123-31UMD', mp:12.3, w:4096, h:3000, px:3.45, fmt:'1.1"',    mount:'C', shutter:'全局', iface:'USB3',  sensor:'CMOS',       tier:'high' },
   { id:'cam-12b', brand:'CST康视达', model:'CST-CR120-9GM',   mp:12.0, w:4000, h:3000, px:1.85, fmt:'1/1.7"',  mount:'C', shutter:'卷帘', iface:'GigE',  sensor:'IMX226',     tier:'high' },
-  { id:'cam-20',  brand:'CST康视达', model:'CST-CR200-6GM',   mp:20.0, w:5472, h:3648, px:2.4,  fmt:'1"',      mount:'C', shutter:'卷帘', iface:'GigE',  sensor:'IMX183',     tier:'high' }
+  { id:'cam-20',  brand:'CST康视达', model:'CST-CR200-6GM',   mp:20.0, w:5472, h:3648, px:2.4,  fmt:'1"',      mount:'C', shutter:'卷帘', iface:'GigE',  sensor:'IMX183',     tier:'high' },
+
+  /* ── Basler ace 系列（产线主流进口品牌，参数据官网规格书）── */
+  { id:'cam-basler-5', brand:'Basler', model:'acA2500-14gm', mp:5.0,  w:2592, h:1944, px:2.2,  fmt:'1/2.5"',  mount:'C', shutter:'卷帘', iface:'GigE',  sensor:'MT9P031',    tier:'mid' },
+  { id:'cam-basler-23',brand:'Basler', model:'acA1920-40gm', mp:2.3,  w:1920, h:1200, px:5.86, fmt:'1/1.2"',  mount:'C', shutter:'全局', iface:'GigE',  sensor:'IMX249',     tier:'high' },
+
+  /* ── 大恒图像 MERCURY2 水星二代（国产产线主力）── */
+  { id:'cam-dh-503',   brand:'大恒图像', model:'MER2-503-36U3M', mp:5.1, w:2448, h:2048, px:3.45, fmt:'2/3"', mount:'C', shutter:'全局', iface:'USB3', sensor:'IMX264', tier:'mid' },
+  { id:'cam-dh-pol',   brand:'大恒图像', model:'MER2-503-36U3M POL', mp:5.1, w:2448, h:2048, px:3.45, fmt:'2/3"', mount:'C', shutter:'全局', iface:'USB3', sensor:'IMX264 MZR 偏振', tier:'high' },
+
+  /* ── 迈德威视 MindVision（国产经济型产线常用）── */
+  { id:'cam-mv-500',   brand:'迈德威视', model:'MV-SUA500C/M', mp:5.0, w:2592, h:1944, px:2.2, fmt:'1/2.5"', mount:'C', shutter:'卷帘', iface:'USB3', sensor:'CMOS 1/2.5"', tier:'entry' }
 ];
 
 /* ---------- 镜头库 ----------
@@ -112,6 +123,15 @@ const LENSES = [
   { brand:'Computar', series:'MP2', model:'M7528-MP2', f:75, fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:0.30, mp:1.5, dist:'低', tier:'mid', type:'fa' },
   { brand:'LumaSpec', series:'LS-FFL', model:'LS-FFL-1339', f:100, fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:2.00, mp:8, dist:'低', tier:'mid', type:'fa' },
   { brand:'海康威视', series:'MVL-KF', model:'MVL-KF10020M-5MP-NIR', f:100, fn:2.0, ic:16, fmt:'1"', mount:'C', mod:0.50, mp:5, dist:'低', tier:'high', type:'fa' },
+
+  /* ── Computar MPW2 超低畸变系列 · 2/3" · 5MP（产线精密测量常用）──
+     畸变仅 0.01%~0.09%，带光圈锁紧螺丝，适合尺寸测量与高精度定位 */
+  { brand:'Computar', series:'MPW2', model:'M0824-MPW2', f:8,  fn:2.4, ic:11, fmt:'2/3"', mount:'C', mod:0.05, mp:5, dist:'极低', tier:'high', type:'fa' },
+  { brand:'Computar', series:'MPW2', model:'M1224-MPW2', f:12, fn:2.4, ic:11, fmt:'2/3"', mount:'C', mod:0.10, mp:5, dist:'极低', tier:'high', type:'fa' },
+  { brand:'Computar', series:'MPW2', model:'M1620-MPW2', f:16, fn:2.0, ic:11, fmt:'2/3"', mount:'C', mod:0.20, mp:5, dist:'极低', tier:'high', type:'fa' },
+  { brand:'Computar', series:'MPW2', model:'M2518-MPW2', f:25, fn:1.8, ic:11, fmt:'2/3"', mount:'C', mod:0.20, mp:5, dist:'极低', tier:'high', type:'fa' },
+  { brand:'Computar', series:'MPW2', model:'M3520-MPW2', f:35, fn:2.0, ic:11, fmt:'2/3"', mount:'C', mod:0.20, mp:5, dist:'极低', tier:'high', type:'fa' },
+  { brand:'Computar', series:'MPW2', model:'M5028-MPW2', f:50, fn:2.8, ic:11, fmt:'2/3"', mount:'C', mod:0.30, mp:5, dist:'极低', tier:'high', type:'fa' },
 
   /* ── 大像圈 FA 定焦 · 1.1"（真实型号 Kowa LM-FC24M 系列）──
      1.1" 传感器对角 φ17.6mm，普通 C 口镜头像圈仅 φ16mm（1" 档）会严重暗角。
@@ -550,7 +570,14 @@ const LIGHTS = [
 
   /* ── 点光 / 聚光 · 远距离局部照明 ── */
   { brand:'CST康视达', series:'SPL', model:'CST-SPL96-W', form:'spot', method:'bright', size:96, color:'白', cri:90, strobe:true, angle:'聚光', tier:'mid', note:'点光源，适合远距离局部照明' },
-  { brand:'奥普特', series:'OPT-SP', model:'OPT-SP100-W', form:'spot', method:'bright', size:100, color:'白', cri:88, strobe:true, angle:'聚光', tier:'mid', note:'可调焦聚光光源' }
+  { brand:'奥普特', series:'OPT-SP', model:'OPT-SP100-W', form:'spot', method:'bright', size:100, color:'白', cri:88, strobe:true, angle:'聚光', tier:'mid', note:'可调焦聚光光源' },
+
+  /* ── CCS 西西斯（日本，产线高端检测常用）── */
+  { brand:'CCS', series:'LFX3', model:'LFX3-100SW', form:'dome', method:'diffuse', size:100, color:'白', cri:95, strobe:false, angle:'平面无影', tier:'high', note:'平面无影光源，曲面/凹凸面/印字均匀检测' },
+  { brand:'CCS', series:'LFX3', model:'LFX3-50SW', form:'dome', method:'diffuse', size:50, color:'白', cri:95, strobe:false, angle:'平面无影', tier:'high', note:'小尺寸平面无影，紧凑工位' },
+  { brand:'CCS', series:'LFV3', model:'LFV3-100SW', form:'coax', method:'bright', size:102, color:'白', cri:95, strobe:false, angle:'同轴', tier:'high', note:'高分辨率同轴，镜面/ glossy 表面缺陷检测' },
+  { brand:'CCS', series:'LFR', model:'LFR-100SW2', form:'ring-high', method:'bright', size:102, color:'白', cri:93, strobe:true, angle:'高角度', tier:'high', note:'面发光环形，金属件表面/字符检测' },
+  { brand:'CCS', series:'LFR', model:'LFR-100RD2', form:'ring-high', method:'bright', size:102, color:'红', cri:null, strobe:true, angle:'高角度', tier:'high', note:'红光环形，提升金属表面对比' }
 ];
 
 /* ---------- 场景规则矩阵 ----------

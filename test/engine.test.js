@@ -23,7 +23,8 @@ section('型号库 · 真实品牌与覆盖');
 assert(CAMERAS.length >= 9, `相机型号数 ${CAMERAS.length} ≥ 9`);
 CAMERAS.forEach(c => {
   assert(!!c.brand && !!c.model, `${c.id} 有品牌与型号`);
-  assert(/^[A-Za-z0-9\-]+$/.test(c.model), `${c.model} 型号格式合法`);
+  /* 真实型号可含空格（POL 偏振后缀）与斜杠（C/M 彩黑标识） */
+  assert(/^[A-Za-z0-9\-\/ ]+$/.test(c.model), `${c.model} 型号格式合法`);
 });
 LENSES.forEach(l => assert(/^[A-Za-z0-9\-]+$/.test(l.model), `${l.model} 镜头型号格式合法`));
 LIGHTS.forEach(l => assert(/^[A-Za-z0-9\-]+$/.test(l.model), `${l.model} 光源型号格式合法`));
@@ -281,6 +282,56 @@ section('大像圈镜头 · 覆盖 1.1" 靶面（φ17.5mm）');
   console.log(`硬性约束后通过: ${passed.map(l => l.model + '(' + l.f + 'mm)').join(', ') || '无'}`);
   assert(passed.length > 0, `截图工况不再零结果（现 ${passed.length} 款）`);
   assert(passed.some(l => l.ic >= 17.6), '通过的镜头含 1.1" 大像圈型号');
+}
+
+/* ============================================================
+   第五部分：工业产线主流品牌与类型扩充
+   ============================================================ */
+section('产线主流品牌 · 相机/镜头/光源扩充');
+{
+  /* 相机：产线主流品牌至少 5 家（CST/海康/Basler/大恒/迈德威视） */
+  const mustCamBrands = ['CST康视达', '海康威视', 'Basler', '大恒图像', '迈德威视'];
+  mustCamBrands.forEach(b => {
+    assert(camBrands.has(b), `相机库含产线主流品牌「${b}」`);
+  });
+  /* 新品牌相机参数完整且可参与推荐 */
+  const newCams = CAMERAS.filter(c => ['Basler', '大恒图像', '迈德威视'].includes(c.brand));
+  assert(newCams.length >= 4, `新增主流品牌相机 ≥4 款（现 ${newCams.length}）`);
+  newCams.forEach(c => {
+    assert(!!c.model && c.w > 0 && c.h > 0 && c.px > 0 && c.fmt && !!c.shutter,
+      `${c.brand} ${c.model} 参数完整`);
+    assert(!!c.tier && !!c.iface, `${c.brand} ${c.model} 含价格档与接口`);
+  });
+  /* 广域像素工况下，新品牌相机能进入推荐列表 */
+  const rec = ENGINE.recommendCameras(120, 90, 0.15, { moving: true, budget: 'any' });
+  const recModels = rec.list.map(x => x.cam.brand);
+  assert(recModels.includes('Basler') && recModels.includes('大恒图像'),
+    '推荐列表覆盖 Basler 与大恒图像');
+
+  /* 镜头：Computar MPW2 超低畸变系列（2/3" 5MP 产线精密检测常用） */
+  const mpw2 = LENSES.filter(l => l.brand === 'Computar' && /MPW2/.test(l.model));
+  assert(mpw2.length >= 5, `Computar MPW2 超低畸变系列 ≥5 款（现 ${mpw2.length}）`);
+  assert(mpw2.every(l => l.mount === 'C' && l.ic >= 11), 'MPW2 均为 C 口 2/3" 像圈');
+  assert(mpw2.every(l => ['极低', '低'].includes(l.dist)), 'MPW2 畸变等级为极低/低');
+  assert([8, 12, 16, 25, 50].every(f => mpw2.some(l => l.f === f)),
+    'MPW2 覆盖 8/12/16/25/50mm 常用焦距档');
+
+  /* 光源：产线主流品牌至少 3 家（CST/奥普特/CCS） */
+  const mustLightBrands = ['CST康视达', '奥普特', 'CCS'];
+  mustLightBrands.forEach(b => {
+    assert(lightBrands.has(b), `光源库含产线主流品牌「${b}」`);
+  });
+  const ccs = LIGHTS.filter(l => l.brand === 'CCS');
+  assert(ccs.length >= 3, `光源库含 CCS ≥3 款（现 ${ccs.length}）`);
+  ccs.forEach(l => {
+    assert(!!l.model && l.size > 0 && !!l.form && !!l.method && !!l.color,
+      `CCS ${l.model} 参数完整`);
+  });
+  /* CCS 覆盖平面无影/同轴/环形三类产线高价值形态 */
+  const ccsForms = new Set(ccs.map(l => l.form));
+  assert(ccsForms.has('dome'), 'CCS 含平面无影(穹顶)光源');
+  assert(ccsForms.has('coax'), 'CCS 含同轴光源');
+  assert(ccsForms.has('ring-high'), 'CCS 含环形光源');
 }
 
 /* ============================================================
